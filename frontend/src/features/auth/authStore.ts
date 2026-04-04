@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { api } from "../../lib/api";
+import { api, setTokenGetter } from "../../lib/api";
 
 interface AuthState {
   accessToken: string | null;
@@ -14,6 +14,8 @@ interface AuthState {
   logout: () => void;
   setError: (error: string | null) => void;
 }
+
+setTokenGetter(() => useAuthStore.getState().accessToken);
 
 export const useAuthStore = create<AuthState>((set) => ({
   accessToken: null,
