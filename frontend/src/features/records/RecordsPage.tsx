@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "../../lib/api";
+import { useAuthStore } from "../auth/authStore";
 
 interface Record {
   id: string;
@@ -42,6 +43,23 @@ export function RecordsPage({ onCreate, onView }: RecordsPageProps) {
     }
   };
 
+  const handleExport = async (format: "csv" | "pdf") => {
+    const token = useAuthStore.getState().accessToken;
+    if (!token) return;
+    const ext = format === "csv" ? "csv" : "pdf";
+    const res = await fetch(`/api/v1/export/${ext}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `records.${ext}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     fetchRecords();
   }, [page, filterType, filterCategory]);
@@ -52,7 +70,11 @@ export function RecordsPage({ onCreate, onView }: RecordsPageProps) {
   return (
     <div>
       <h1>Records</h1>
-      {onCreate && <button onClick={onCreate}>New Record</button>}
+      <div>
+        {onCreate && <button onClick={onCreate}>New Record</button>}
+        <button onClick={() => handleExport("csv")}>Export CSV</button>
+        <button onClick={() => handleExport("pdf")}>Export PDF</button>
+      </div>
       <div>
         <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setPage(1); }}>
           <option value="">All Types</option>
