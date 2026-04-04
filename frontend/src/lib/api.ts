@@ -66,4 +66,25 @@ export const api = {
 
   deleteUser: (id: string) =>
     request<void>(`/users/${id}`, { method: "DELETE" }),
+
+  listRecords: (query?: string) =>
+    request<{ items: Array<{ id: string; user_id: string; record_type: string; category: string; amount: string; description: string | null; recorded_at: string; is_deleted: boolean }>; total: number; page: number; page_size: number }>(`/records${query ? `?${query}` : ""}`),
+
+  createRecord: (data: { record_type: string; category: string; amount: number | string; description?: string }) =>
+    request<{ id: string; user_id: string; record_type: string; category: string; amount: string; description: string | null; recorded_at: string }>(`/records`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  getRecord: (id: string) =>
+    request<{ id: string; user_id: string; record_type: string; category: string; amount: string; description: string | null; recorded_at: string }>(`/records/${id}`),
+
+  updateRecord: (id: string, data: { record_type?: string; category?: string; amount?: number | string; description?: string; recorded_at?: string }) =>
+    request<{ id: string; user_id: string; record_type: string; category: string; amount: string; description: string | null; recorded_at: string }>(`/records/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  deleteRecord: (id: string) =>
+    request<void>(`/records/${id}`, { method: "DELETE" }),
 };
