@@ -96,13 +96,13 @@ async def test_csv_export_returns_csv_content(client, admin_token, seed_export_d
 
 
 @pytest.mark.asyncio
-async def test_pdf_export_returns_file(client, admin_token, seed_export_data):
+async def test_txt_export_returns_file(client, admin_token, seed_export_data):
     r = await client.get(
-        "/api/v1/export/pdf",
+        "/api/v1/export/txt",
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert r.status_code == 200
-    assert "records.pdf" in r.headers.get("content-disposition", "")
+    assert "records.txt" in r.headers.get("content-disposition", "")
     assert b"FinTrack Export" in r.content
     assert b"Salary" in r.content
 

@@ -2,9 +2,9 @@ services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_USER: fintrack
-      POSTGRES_PASSWORD: fintrack
-      POSTGRES_DB: fintrack
+      POSTGRES_USER: ${POSTGRES_USER:-fintrack}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fintrack}
+      POSTGRES_DB: ${POSTGRES_DB:-fintrack}
     ports: ["5432:5432"]
     volumes: ["pgdata:/var/lib/postgresql/data"]
     healthcheck:
@@ -15,7 +15,7 @@ services:
 
   backend:
     build: ./backend
-    env_file: ./backend/.env.example
+    env_file: ./backend/.env
     ports: ["8000:8000"]
     depends_on:
       db:

@@ -9,9 +9,10 @@ from app.models.user import User
 
 
 def _user_filter(user: User):
+    base = Record.is_deleted == False
     if user.role.value != "admin":
-        return Record.user_id == user.id
-    return Record.is_deleted == False
+        return (base) & (Record.user_id == user.id)
+    return base
 
 
 async def get_summary(db: AsyncSession, user: User) -> dict:
@@ -49,32 +50,26 @@ async def get_by_category(db: AsyncSession, user: User) -> list[dict]:
 
 async def get_trends(db: AsyncSession, user: User, months: int = 6) -> list[dict]:
     cutoff = datetime.now() - timedelta(days=months * 30)
-    base = (
-        select(
-            func.strftime("%Y-%m", Record.recorded_at).label("period"),
-            Record.record_type,
-            func.sum(Record.amount).label("total"),
-        )
-        .where(_user_filter(user), Record.recorded_at >= cutoff)
-        .group_by("period", Record.record_type)
-        .order_by("period")
+    base = select(Record.recorded_at, Record.record_type, Record.amount).where(
+        _user_filter(user), Record.recorded_at >= cutoff
     )
     result = await db.execute(base)
     rows = result.all()
 
     trends: dict[str, dict] = {}
     for r in rows:
-        if r.period not in trends:
-            trends[r.period] = {
-                "period": r.period,
+        period = r.recorded_at.strftime("%Y-%m")
+        if period not in trends:
+            trends[period] = {
+                "period": period,
                 "income": Decimal("0"),
                 "expense": Decimal("0"),
             }
         if r.record_type == RecordType.income:
-            trends[r.period]["income"] = r.total
+            trends[period]["income"] += r.amount
         else:
-            trends[r.period]["expense"] = r.total
-    return list(trends.values())
+            trends[period]["expense"] += r.amount
+    return sorted(trends.values(), key=lambda x: x["period"])
 
 
 async def get_recent(db: AsyncSession, user: User, limit: int = 10) -> list[Record]:

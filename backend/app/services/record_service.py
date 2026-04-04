@@ -30,13 +30,15 @@ async def list_records(
     if record_type:
         base = base.where(Record.record_type == record_type)
     if category:
-        base = base.where(Record.category.ilike(f"%{category}%"))
+        safe = category.replace("%", r"\%").replace("_", r"\_")
+        base = base.where(Record.category.ilike(f"%{safe}%", escape="\\"))
     if date_from:
         base = base.where(Record.recorded_at >= date_from)
     if date_to:
         base = base.where(Record.recorded_at <= date_to)
     if search:
-        base = base.where(Record.description.ilike(f"%{search}%"))
+        safe = search.replace("%", r"\%").replace("_", r"\_")
+        base = base.where(Record.description.ilike(f"%{safe}%", escape="\\"))
 
     count_result = await db.execute(select(func.count()).select_from(base.subquery()))
     total = count_result.scalar_one()

@@ -1,7 +1,5 @@
 from fastapi import APIRouter, Depends, Response
-from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-import io
 
 from app.db.session import get_db
 from app.dependencies.auth import get_current_user
@@ -24,14 +22,14 @@ async def export_csv(
     )
 
 
-@router.get("/pdf")
-async def export_pdf(
+@router.get("/txt")
+async def export_txt(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    pdf_bytes = await export_service.get_records_pdf_bytes(db, current_user)
+    txt_bytes = await export_service.get_records_text(db, current_user)
     return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={"Content-Disposition": "attachment; filename=records.pdf"},
+        content=txt_bytes,
+        media_type="text/plain",
+        headers={"Content-Disposition": "attachment; filename=records.txt"},
     )

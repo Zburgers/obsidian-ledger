@@ -9,9 +9,10 @@ from app.models.user import User
 
 
 def _user_filter(user: User):
+    base = Record.is_deleted == False
     if user.role.value != "admin":
-        return Record.user_id == user.id
-    return Record.is_deleted == False
+        return (base) & (Record.user_id == user.id)
+    return base
 
 
 async def get_records_csv(db: AsyncSession, user: User) -> str:
@@ -36,7 +37,7 @@ async def get_records_csv(db: AsyncSession, user: User) -> str:
     return output.getvalue()
 
 
-async def get_records_pdf_bytes(db: AsyncSession, user: User) -> bytes:
+async def get_records_text(db: AsyncSession, user: User) -> bytes:
     base = select(Record).where(_user_filter(user)).order_by(Record.recorded_at.desc())
     result = await db.execute(base)
     records = result.scalars().all()
