@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
     rate_limit_per_minute: int = 60
+    cors_origins: list[str] = ["http://localhost:5173"]
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

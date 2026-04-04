@@ -15,10 +15,6 @@ from app.core.security import (
 from app.schemas.auth import RegisterRequest, LoginRequest
 
 
-class DuplicateEmailError(Exception):
-    pass
-
-
 async def register_viewer(db: AsyncSession, payload: RegisterRequest) -> User:
     existing = await db.execute(
         select(User).where(User.email == payload.email, User.is_deleted == False)
@@ -45,7 +41,13 @@ async def login(db: AsyncSession, payload: LoginRequest) -> dict:
         select(User).where(User.email == payload.email, User.is_deleted == False)
     )
     user = result.scalar_one_or_none()
-    if not user or not verify_password(payload.password, user.hashed_password):
+
+    dummy_hash = hash_password("dummy-password-for-timing")
+    password_valid = verify_password(
+        payload.password, user.hashed_password if user else dummy_hash
+    )
+
+    if not user or not password_valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
         )
