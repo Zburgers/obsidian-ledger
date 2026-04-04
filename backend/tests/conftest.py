@@ -1,6 +1,7 @@
 import os
 
-os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///./test.db"
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./test.db")
+os.environ.setdefault("SECRET_KEY", "test-secret-key-not-for-production")
 
 import pytest
 import pytest_asyncio
@@ -15,12 +16,14 @@ from app.models.user import User, UserRole  # noqa: F401
 from app.models.record import Record  # noqa: F401
 
 
-TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
+def _test_db_url() -> str:
+    return os.environ.get("TEST_DATABASE_URL", "sqlite+aiosqlite:///./test.db")
 
 
 @pytest_asyncio.fixture
 async def db_engine():
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+    url = _test_db_url()
+    engine = create_async_engine(url, echo=False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine

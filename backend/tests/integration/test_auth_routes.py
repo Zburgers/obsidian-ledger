@@ -1,23 +1,8 @@
 import pytest
 import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
 
-from app.main import app
-from app.db.session import engine, async_session
-from app.db.base import Base
+from app.core.security import create_access_token, create_refresh_token
 from app.models.user import User, UserRole
-
-
-@pytest_asyncio.fixture
-async def client():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as c:
-        yield c
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
 
 
 @pytest_asyncio.fixture
@@ -98,8 +83,8 @@ async def test_login_returns_access_and_refresh(client):
 
 
 @pytest.mark.asyncio
-async def test_refresh_returns_new_access(client, viewer_token):
-    r = await client.post(
+async def test_refresh_returns_new_access(client):
+    await client.post(
         "/api/v1/auth/register",
         json={
             "email": "refreshuser@test.com",
@@ -130,4 +115,58 @@ async def test_me_returns_current_user(client, viewer_token):
 @pytest.mark.asyncio
 async def test_me_unauthenticated_returns_401(client):
     r = await client.get("/api/v1/auth/me")
+    assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_me_with_tampered_token_returns_401(client):
+    r = await client.get(
+        "/api/v1/auth/me", headers={"Authorization": "Bearer tampered.token.value"}
+    )
+    assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_me_with_refresh_token_returns_401(client):
+    await client.post(
+        "/api/v1/auth/register",
+        json={"email": "wrongtype@test.com", "password": "SecurePass1!"},
+    )
+    login_resp = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "wrongtype@test.com", "password": "SecurePass1!"},
+    )
+    refresh_token = login_resp.json()["refresh_token"]
+    r = await client.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {refresh_token}"}
+    )
+    assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_refresh_with_access_token_returns_401(client):
+    await client.post(
+        "/api/v1/auth/register",
+        json={"email": "accesstoken@test.com", "password": "SecurePass1!"},
+    )
+    login_resp = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "accesstoken@test.com", "password": "SecurePass1!"},
+    )
+    access_token = login_resp.json()["access_token"]
+    r = await client.post("/api/v1/auth/refresh", json={"refresh_token": access_token})
+    assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_me_with_expired_token_returns_401(client):
+    from datetime import datetime, timedelta, timezone
+
+    expired_token = create_access_token(
+        {"sub": "00000000-0000-0000-0000-000000000000"},
+        expires_delta=timedelta(seconds=-1),
+    )
+    r = await client.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {expired_token}"}
+    )
     assert r.status_code == 401

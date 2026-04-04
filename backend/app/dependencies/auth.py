@@ -28,8 +28,15 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
         )
 
+    try:
+        user_uuid = uuid.UUID(user_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )
+
     result = await db.execute(
-        select(User).where(User.id == uuid.UUID(user_id), User.is_deleted == False)
+        select(User).where(User.id == user_uuid, User.is_deleted == False)
     )
     user = result.scalar_one_or_none()
     if not user:
