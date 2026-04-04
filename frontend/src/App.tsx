@@ -5,6 +5,7 @@ import { UsersPage } from "./features/users/UsersPage";
 import { RecordsPage } from "./features/records/RecordsPage";
 import { RecordForm } from "./features/records/RecordForm";
 import { RecordDetailPage } from "./features/records/RecordDetailPage";
+import { DashboardPage } from "./features/dashboard/DashboardPage";
 import { ProtectedRoute, AdminRoute } from "./router";
 import { useState, useCallback } from "react";
 
@@ -36,7 +37,7 @@ export function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<h1>Dashboard</h1>} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/records" element={
           recordsView === "list" ? (
             <RecordsPage onCreate={handleCreateRecord} onView={handleViewRecord} />

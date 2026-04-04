@@ -87,4 +87,16 @@ export const api = {
 
   deleteRecord: (id: string) =>
     request<void>(`/records/${id}`, { method: "DELETE" }),
+
+  getDashboardSummary: () =>
+    request<{ total_income: string; total_expense: string; net: string; record_count: number }>("/dashboard/summary"),
+
+  getDashboardByCategory: () =>
+    request<{ items: Array<{ category: string; total: string; count: number }> }>("/dashboard/by-category"),
+
+  getDashboardTrends: () =>
+    request<{ items: Array<{ period: string; income: string; expense: string }> }>("/dashboard/trends"),
+
+  getDashboardRecent: () =>
+    request<{ items: Array<{ id: string; record_type: string; category: string; amount: string; description: string | null; recorded_at: string }> }>("/dashboard/recent"),
 };
