@@ -55,7 +55,7 @@ async def create_user(db: AsyncSession, payload: UserCreateRequest) -> User:
 
 
 async def update_user(
-    db: AsyncSession, user_id: str, payload: UserUpdateRequest
+    db: AsyncSession, user_id: str, payload: UserUpdateRequest, current_admin: User
 ) -> User:
     try:
         user_uuid = uuid.UUID(user_id)
@@ -73,6 +73,39 @@ async def update_user(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
+    # Admin safety: prevent demoting the last active non-deleted admin
+    if payload.role is not None and user.role == UserRole.admin:
+        new_role = UserRole(payload.role)
+        if new_role != UserRole.admin:
+            # Count active non-deleted admins
+            admin_count_result = await db.execute(
+                select(func.count(User.id)).where(
+                    User.role == UserRole.admin,
+                    User.is_active == True,
+                    User.is_deleted == False,
+                )
+            )
+            admin_count = admin_count_result.scalar_one()
+            if admin_count <= 1:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Cannot demote the last active admin",
+                )
+
+    # Admin safety: prevent changing your own role
+    if payload.role is not None and user.id == current_admin.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot change your own role",
+        )
+
+    # Admin safety: prevent deactivating your own account
+    if payload.is_active is False and user.id == current_admin.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot deactivate your own account",
+        )
+
     if payload.name is not None:
         user.name = payload.name
     if payload.role is not None:
@@ -85,7 +118,7 @@ async def update_user(
     return user
 
 
-async def delete_user(db: AsyncSession, user_id: str) -> None:
+async def delete_user(db: AsyncSession, user_id: str, current_admin: User) -> None:
     try:
         user_uuid = uuid.UUID(user_id)
     except (ValueError, AttributeError):
@@ -100,6 +133,29 @@ async def delete_user(db: AsyncSession, user_id: str) -> None:
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    # Admin safety: prevent deleting the last active non-deleted admin
+    if user.role == UserRole.admin:
+        admin_count_result = await db.execute(
+            select(func.count(User.id)).where(
+                User.role == UserRole.admin,
+                User.is_active == True,
+                User.is_deleted == False,
+            )
+        )
+        admin_count = admin_count_result.scalar_one()
+        if admin_count <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot delete the last active admin",
+            )
+
+    # Admin safety: prevent deleting your own account
+    if user.id == current_admin.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete your own account",
         )
 
     user.is_deleted = True

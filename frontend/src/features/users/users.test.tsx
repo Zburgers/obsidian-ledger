@@ -52,4 +52,16 @@ describe("Users page", () => {
     );
     expect(screen.getByText("Loading users...")).toBeInTheDocument();
   });
+
+  it("shows error message when listUsers fails", async () => {
+    mockListUsers.mockRejectedValue(new Error("Failed to fetch users"));
+    render(
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<UsersPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    expect(await screen.findByText("Failed to fetch users")).toBeInTheDocument();
+  });
 });

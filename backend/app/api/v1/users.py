@@ -63,10 +63,10 @@ async def create_user_endpoint(
 async def update_user_endpoint(
     user_id: str,
     payload: UserUpdateRequest,
-    _admin: User = Depends(require_admin),
+    admin: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    user = await user_service.update_user(db, user_id, payload)
+    user = await user_service.update_user(db, user_id, payload, admin)
     return UserListItem(
         id=str(user.id),
         email=user.email,
@@ -80,7 +80,7 @@ async def update_user_endpoint(
 @router.delete("/{user_id}", status_code=204)
 async def delete_user_endpoint(
     user_id: str,
-    _admin: User = Depends(require_admin),
+    admin: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    await user_service.delete_user(db, user_id)
+    await user_service.delete_user(db, user_id, admin)
