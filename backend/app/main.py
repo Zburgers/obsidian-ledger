@@ -1,5 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from slowapi.errors import RateLimitExceeded
 
 from app.api.v1.auth import router as auth_router
 from app.api.v1.users import router as users_router
@@ -7,6 +11,8 @@ from app.api.v1.records import router as records_router
 from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.export import router as export_router
 from app.core.config import settings
+from app.core.rate_limit import limiter, rate_limit_exceeded_handler
+from app.core.errors import validation_exception_handler, http_exception_handler
 
 app = FastAPI(
     title="FinTrack API",
@@ -20,6 +26,7 @@ app = FastAPI(
         {"name": "export", "description": "Data export in CSV and text formats"},
     ],
 )
+app.state.limiter = limiter
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,6 +35,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 
 
 @app.get("/health")

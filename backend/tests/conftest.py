@@ -17,7 +17,7 @@ from app.models.record import Record  # noqa: F401
 
 
 def _test_db_url() -> str:
-    return os.environ.get("TEST_DATABASE_URL", "sqlite+aiosqlite:///./test.db")
+    return os.environ.get("TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 
 
 @pytest_asyncio.fixture
@@ -42,6 +42,7 @@ async def client(db_engine):
             yield session
 
     app.dependency_overrides[get_db] = override_get_db
+    app.state.limiter.reset()
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as c:
