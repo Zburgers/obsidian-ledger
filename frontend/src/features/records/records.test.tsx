@@ -5,6 +5,12 @@ import { RecordsPage } from "./RecordsPage";
 
 const mockListRecords = vi.fn();
 
+vi.mock("../auth/authStore", () => ({
+  useAuthStore: {
+    getState: () => ({ accessToken: "test-token" }),
+  },
+}));
+
 vi.mock("../../lib/api", () => ({
   setTokenGetter: vi.fn(),
   api: {

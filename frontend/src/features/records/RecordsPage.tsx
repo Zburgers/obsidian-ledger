@@ -43,10 +43,10 @@ export function RecordsPage({ onCreate, onView }: RecordsPageProps) {
     }
   };
 
-  const handleExport = async (format: "csv" | "pdf") => {
+  const handleExport = async (format: "csv" | "txt") => {
     const token = useAuthStore.getState().accessToken;
     if (!token) return;
-    const ext = format === "csv" ? "csv" : "pdf";
+    const ext = format === "csv" ? "csv" : "txt";
     const res = await fetch(`/api/v1/export/${ext}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -73,7 +73,7 @@ export function RecordsPage({ onCreate, onView }: RecordsPageProps) {
       <div>
         {onCreate && <button onClick={onCreate}>New Record</button>}
         <button onClick={() => handleExport("csv")}>Export CSV</button>
-        <button onClick={() => handleExport("pdf")}>Export PDF</button>
+        <button onClick={() => handleExport("txt")}>Export TXT</button>
       </div>
       <div>
         <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setPage(1); }}>

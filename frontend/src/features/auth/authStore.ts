@@ -14,6 +14,7 @@ interface AuthState {
   register: (email: string, password: string, name?: string) => Promise<void>;
   logout: () => void;
   setError: (error: string | null) => void;
+  ensureProfile: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -81,6 +82,24 @@ export const useAuthStore = create<AuthState>()(
         }),
 
       setError: (error) => set({ error }),
+
+      ensureProfile: async () => {
+        const state = useAuthStore.getState();
+        if (!state.accessToken || state.role) return;
+        try {
+          const user = await api.me();
+          set({ email: user.email, role: user.role, isAuthenticated: true });
+        } catch {
+          set({
+            accessToken: null,
+            refreshToken: null,
+            email: null,
+            role: null,
+            isAuthenticated: false,
+            error: "Session expired",
+          });
+        }
+      },
     }),
     {
       name: "auth-storage",
