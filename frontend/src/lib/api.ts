@@ -1,4 +1,8 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "/api/v1";
+const envBase = import.meta.env.VITE_API_BASE;
+const envHost = import.meta.env.VITE_API_HOST || "localhost";
+const envPort = import.meta.env.VITE_API_PORT;
+
+const API_BASE = envBase || (envPort ? `http://${envHost}:${envPort}/api/v1` : "/api/v1");
 
 let getToken: (() => string | null) | null = null;
 
