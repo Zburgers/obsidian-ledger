@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     database_url: str
     secret_key: str
-    frontend_internal_url: str = "http://localhost:5173"
+    frontend_internal_url: str = "http://frontend:5173"
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
     rate_limit_per_minute: int = 60
