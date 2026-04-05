@@ -80,8 +80,8 @@ docker compose exec backend uv run alembic upgrade head
 docker compose exec -w /app -e PYTHONPATH=/app backend .venv/bin/python scripts/seed_demo_data.py
 
 # Open the app
-# Frontend: http://localhost:5173
-# API docs: http://localhost:8000/docs
+# Frontend: http://localhost:9002
+# API docs: http://localhost:9001/docs
 ```
 
 ### Seeding Demo Data
@@ -153,7 +153,8 @@ npm run dev
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | No | `15` | Access token lifetime |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | No | `7` | Refresh token lifetime |
 | `RATE_LIMIT_PER_MINUTE` | No | `60` | Global rate limit |
-| `CORS_ORIGINS` | No | `["http://localhost:5173"]` | Allowed origins (JSON array) |
+| `FRONTEND_INTERNAL_URL` | No | `http://frontend:5173` | Backend-to-frontend healthcheck target inside Docker network |
+| `CORS_ORIGINS` | No | `["http://localhost:9002","http://127.0.0.1:9002"]` | Allowed origins (JSON array) |
 
 ## Role Behavior
 
