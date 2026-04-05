@@ -1,6 +1,7 @@
 from decimal import Decimal
+from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
@@ -20,6 +21,20 @@ from app.services import record_service
 
 router = APIRouter(prefix="/records", tags=["records"])
 
+_ALLOWED_RECORD_TYPES = {"income", "expense"}
+
+
+def _parse_iso_datetime(value: str | None, field_name: str) -> datetime | None:
+    if value is None:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"{field_name} must be a valid ISO-8601 datetime",
+        ) from exc
+
 
 @router.get("", response_model=RecordListResponse)
 async def list_records_endpoint(
@@ -35,10 +50,26 @@ async def list_records_endpoint(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    from datetime import datetime
+    if type is not None and type not in _ALLOWED_RECORD_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="type must be one of: income, expense",
+        )
 
-    df = datetime.fromisoformat(date_from) if date_from else None
-    dt = datetime.fromisoformat(date_to) if date_to else None
+    df = _parse_iso_datetime(date_from, "date_from")
+    dt = _parse_iso_datetime(date_to, "date_to")
+
+    if df and dt and df > dt:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="date_from must be less than or equal to date_to",
+        )
+
+    if amount_min is not None and amount_max is not None and amount_min > amount_max:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="amount_min must be less than or equal to amount_max",
+        )
 
     advanced_filters_requested = any(
         value is not None for value in (search, amount_min, amount_max)
