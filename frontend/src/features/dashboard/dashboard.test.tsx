@@ -52,4 +52,23 @@ describe("Dashboard page", () => {
     );
     expect(screen.getByText("Loading dashboard...")).toBeInTheDocument();
   });
+
+  it("shows an empty-state story when there are no records", async () => {
+    mockGetSummary.mockResolvedValue({ total_income: "0", total_expense: "0", net: "0", record_count: 0 });
+    mockGetByCategory.mockResolvedValue({ items: [] });
+    mockGetTrends.mockResolvedValue({ items: [] });
+    mockGetRecent.mockResolvedValue({ items: [] });
+
+    render(
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<DashboardPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText("Your dashboard story starts here")).toBeInTheDocument();
+    expect(screen.getByText("No category totals available yet.")).toBeInTheDocument();
+    expect(screen.getByText("No recent records yet.")).toBeInTheDocument();
+  });
 });

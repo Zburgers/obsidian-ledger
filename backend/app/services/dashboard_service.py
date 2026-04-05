@@ -9,10 +9,7 @@ from app.models.user import User
 
 
 def _user_filter(user: User):
-    base = Record.is_deleted == False
-    if user.role.value != "admin":
-        return (base) & (Record.user_id == user.id)
-    return base
+    return Record.is_deleted == False
 
 
 async def get_summary(db: AsyncSession, user: User) -> dict:

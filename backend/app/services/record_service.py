@@ -24,9 +24,6 @@ async def list_records(
 ) -> dict:
     base = select(Record).where(Record.is_deleted == False)
 
-    if user.role.value != "admin":
-        base = base.where(Record.user_id == user.id)
-
     if record_type:
         base = base.where(Record.record_type == record_type)
     if category:
@@ -77,8 +74,6 @@ async def get_record(db: AsyncSession, user: User, record_id: str) -> Record:
         )
 
     base = select(Record).where(Record.id == rid, Record.is_deleted == False)
-    if user.role.value != "admin":
-        base = base.where(Record.user_id == user.id)
 
     result = await db.execute(base)
     record = result.scalar_one_or_none()

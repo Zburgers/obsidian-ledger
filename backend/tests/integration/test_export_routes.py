@@ -48,6 +48,24 @@ async def viewer_token(client, db_engine):
 
 
 @pytest_asyncio.fixture
+async def analyst_token(client, db_engine):
+    analyst_id = uuid.uuid4()
+    async_session = sessionmaker(db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session() as db:
+        db.add(
+            User(
+                id=analyst_id,
+                email="analyst-export@test.com",
+                hashed_password=hash_password("Analyst123!"),
+                name="Analyst",
+                role=UserRole.analyst,
+            )
+        )
+        await db.commit()
+    return create_access_token({"sub": str(analyst_id)})
+
+
+@pytest_asyncio.fixture
 async def seed_export_data(client, admin_token, db_engine):
     async_session = sessionmaker(db_engine, class_=AsyncSession, expire_on_commit=False)
     async with async_session() as db:
@@ -108,7 +126,9 @@ async def test_txt_export_returns_file(client, admin_token, seed_export_data):
 
 
 @pytest.mark.asyncio
-async def test_viewer_export_is_scoped(client, viewer_token):
+async def test_viewer_export_can_see_global_data(
+    client, viewer_token, seed_export_data
+):
     r = await client.get(
         "/api/v1/export/csv",
         headers={"Authorization": f"Bearer {viewer_token}"},
@@ -116,4 +136,18 @@ async def test_viewer_export_is_scoped(client, viewer_token):
     assert r.status_code == 200
     text = r.text
     lines = text.strip().split("\n")
-    assert len(lines) == 1  # header only, no records
+    assert len(lines) > 1
+
+
+@pytest.mark.asyncio
+async def test_analyst_export_can_see_global_data(
+    client, analyst_token, seed_export_data
+):
+    r = await client.get(
+        "/api/v1/export/csv",
+        headers={"Authorization": f"Bearer {analyst_token}"},
+    )
+    assert r.status_code == 200
+    text = r.text
+    lines = text.strip().split("\n")
+    assert len(lines) > 1

@@ -2,10 +2,13 @@ import pytest
 import pytest_asyncio
 
 from app.models.user import User, UserRole
+from app.models.record import Record, RecordType
 from app.core.security import hash_password, create_access_token
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
 import uuid
+from datetime import datetime
+from decimal import Decimal
 
 
 @pytest_asyncio.fixture
@@ -44,6 +47,49 @@ async def viewer_token(client, db_engine):
     return create_access_token({"sub": str(viewer_id)})
 
 
+@pytest_asyncio.fixture
+async def analyst_token(client, db_engine):
+    analyst_id = uuid.uuid4()
+    async_session = sessionmaker(db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session() as db:
+        db.add(
+            User(
+                id=analyst_id,
+                email="analyst-records@test.com",
+                hashed_password=hash_password("Analyst123!"),
+                name="Analyst",
+                role=UserRole.analyst,
+            )
+        )
+        await db.commit()
+    return create_access_token({"sub": str(analyst_id)})
+
+
+@pytest_asyncio.fixture
+async def seed_admin_record(db_engine):
+    async_session = sessionmaker(db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session() as db:
+        admin = User(
+            email="records-seed-admin@test.com",
+            hashed_password=hash_password("Admin123!"),
+            name="Seed Admin",
+            role=UserRole.admin,
+        )
+        db.add(admin)
+        await db.flush()
+        db.add(
+            Record(
+                user_id=admin.id,
+                record_type=RecordType.income,
+                category="SeedIncome",
+                amount=Decimal("999.00"),
+                description="Seeded for read visibility",
+                recorded_at=datetime.now(),
+            )
+        )
+        await db.commit()
+
+
 @pytest.mark.asyncio
 async def test_admin_can_create_record(client, admin_token):
     r = await client.post(
@@ -78,14 +124,27 @@ async def test_viewer_cannot_create_record(client, viewer_token):
 
 
 @pytest.mark.asyncio
-async def test_viewer_sees_only_own_records(client, viewer_token):
+async def test_viewer_can_see_global_records(client, viewer_token, seed_admin_record):
     r = await client.get(
         "/api/v1/records",
         headers={"Authorization": f"Bearer {viewer_token}"},
     )
     assert r.status_code == 200
     body = r.json()
-    assert body["total"] == 0
+    assert body["total"] >= 1
+    assert any(item["category"] == "SeedIncome" for item in body["items"])
+
+
+@pytest.mark.asyncio
+async def test_analyst_can_see_global_records(client, analyst_token, seed_admin_record):
+    r = await client.get(
+        "/api/v1/records",
+        headers={"Authorization": f"Bearer {analyst_token}"},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["total"] >= 1
+    assert any(item["category"] == "SeedIncome" for item in body["items"])
 
 
 @pytest.mark.asyncio

@@ -48,6 +48,24 @@ async def viewer_token(client, db_engine):
 
 
 @pytest_asyncio.fixture
+async def analyst_token(client, db_engine):
+    analyst_id = uuid.uuid4()
+    async_session = sessionmaker(db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session() as db:
+        db.add(
+            User(
+                id=analyst_id,
+                email="analyst-dash@test.com",
+                hashed_password=hash_password("Analyst123!"),
+                name="Analyst",
+                role=UserRole.analyst,
+            )
+        )
+        await db.commit()
+    return create_access_token({"sub": str(analyst_id)})
+
+
+@pytest_asyncio.fixture
 async def seed_records(client, admin_token, db_engine):
     async_session = sessionmaker(db_engine, class_=AsyncSession, expire_on_commit=False)
     async with async_session() as db:
@@ -104,15 +122,27 @@ async def test_summary_returns_totals(client, admin_token, seed_records):
 
 
 @pytest.mark.asyncio
-async def test_viewer_summary_is_scoped(client, viewer_token):
+async def test_viewer_summary_can_see_global_data(client, viewer_token, seed_records):
     r = await client.get(
         "/api/v1/dashboard/summary",
         headers={"Authorization": f"Bearer {viewer_token}"},
     )
     assert r.status_code == 200
     body = r.json()
-    assert body["total_income"] == "0"
-    assert body["total_expense"] == "0"
+    assert body["total_income"] == "5000.00"
+    assert body["total_expense"] == "200.00"
+
+
+@pytest.mark.asyncio
+async def test_analyst_summary_can_see_global_data(client, analyst_token, seed_records):
+    r = await client.get(
+        "/api/v1/dashboard/summary",
+        headers={"Authorization": f"Bearer {analyst_token}"},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["total_income"] == "5000.00"
+    assert body["total_expense"] == "200.00"
 
 
 @pytest.mark.asyncio
