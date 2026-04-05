@@ -18,6 +18,30 @@ interface RecordsPageProps {
   onView?: (id: string) => void;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Transaction Arrow Icon
+───────────────────────────────────────────────────────────── */
+function TransactionArrow({ type }: { type: string }) {
+  const isIncome = type.toLowerCase() === "income";
+  return (
+    <span className={`type-arrow ${isIncome ? "income" : "expense"}`} aria-label={type}>
+      {isIncome ? "↓" : "↑"}
+    </span>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Filter Chip Component
+───────────────────────────────────────────────────────────── */
+function FilterChip({ label, onClear }: { label: string; onClear: () => void }) {
+  return (
+    <span className="filter-chip">
+      {label}
+      <button type="button" onClick={onClear} aria-label={`Clear ${label} filter`}>×</button>
+    </span>
+  );
+}
+
 export function RecordsPage({ onCreate, onView }: RecordsPageProps) {
   const [records, setRecords] = useState<FinanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +97,17 @@ export function RecordsPage({ onCreate, onView }: RecordsPageProps) {
     URL.revokeObjectURL(url);
   };
 
+  const clearAllFilters = () => {
+    setFilterType("");
+    setFilterCategory("");
+    setFilterFrom("");
+    setFilterTo("");
+    setSearch("");
+    setAmountMin("");
+    setAmountMax("");
+    setPage(1);
+  };
+
   useEffect(() => {
     fetchRecords();
   }, [
@@ -108,201 +143,245 @@ export function RecordsPage({ onCreate, onView }: RecordsPageProps) {
       maximumFractionDigits: 0,
     }).format(value);
 
-  if (loading) return <p>Loading records...</p>;
+  const hasActiveFilters = filterType || filterCategory || filterFrom || filterTo || search || amountMin || amountMax;
+  const totalPages = Math.ceil(total / 20) || 1;
+
+  if (loading && records.length === 0) return <p className="muted">Loading records...</p>;
   if (error) return <p className="error">{error}</p>;
 
   return (
-    <div className="grid">
+    <div className="records-layout">
+      {/* ─── Page Header ─── */}
       <div className="page-header">
         <div>
           <h1 className="page-title">Records</h1>
-          <p className="muted">Track, filter, and export financial records.</p>
+          <p className="muted">Track, filter, and export financial transactions</p>
         </div>
         <div className="actions">
-          {onCreate && <button className="btn-primary" onClick={onCreate}>New Record</button>}
-          <button onClick={() => handleExport("csv")}>Export CSV</button>
-          <button onClick={() => handleExport("pdf")}>Export PDF</button>
+          {onCreate && <button className="btn-primary" onClick={onCreate}>+ New Record</button>}
+          <button onClick={() => handleExport("csv")}>CSV</button>
+          <button onClick={() => handleExport("pdf")}>PDF</button>
         </div>
       </div>
 
-      <section className="card">
-        <h2>Filters</h2>
-        <div className="grid cols-3">
-          <div className="field">
-            <label htmlFor="type-filter">Type</label>
-            <select id="type-filter" value={filterType} onChange={(e) => { setFilterType(e.target.value); setPage(1); }}>
-              <option value="">All Types</option>
-              <option value="income">Income</option>
-              <option value="expense">Expense</option>
-            </select>
+      {/* ─── Glassmorphic Insights Row ─── */}
+      <section className="insights-glass reveal" aria-label="Page insights">
+        <article className="insight-mini income">
+          <span className="insight-icon">↓</span>
+          <div>
+            <span className="insight-value">{formatMoney(incomeTotal)}</span>
+            <span className="insight-label">Income</span>
           </div>
-          <div className="field">
-            <label htmlFor="category-filter">Category</label>
+        </article>
+        <article className="insight-mini expense">
+          <span className="insight-icon">↑</span>
+          <div>
+            <span className="insight-value">{formatMoney(expenseTotal)}</span>
+            <span className="insight-label">Expenses</span>
+          </div>
+        </article>
+        <article className="insight-mini net">
+          <span className="insight-icon">=</span>
+          <div>
+            <span className={`insight-value ${netTotal >= 0 ? "positive" : "negative"}`}>
+              {formatMoney(netTotal)}
+            </span>
+            <span className="insight-label">Net</span>
+          </div>
+        </article>
+        <article className="insight-mini count">
+          <span className="insight-icon">#</span>
+          <div>
+            <span className="insight-value">{total}</span>
+            <span className="insight-label">Total Records</span>
+          </div>
+        </article>
+      </section>
+
+      {/* ─── Streamlined Filter Row ─── */}
+      <section className="filter-row reveal" aria-label="Filters">
+        <div className="filter-row-main">
+          <select 
+            value={filterType} 
+            onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
+            aria-label="Filter by type"
+          >
+            <option value="">All Types</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+
+          <input
+            type="text"
+            placeholder="Category..."
+            value={filterCategory}
+            onChange={(e) => { setFilterCategory(e.target.value); setPage(1); }}
+            aria-label="Filter by category"
+          />
+
+          {canUseAdvancedFilters && (
             <input
-              id="category-filter"
-              placeholder="Filter by category"
-              value={filterCategory}
-              onChange={(e) => { setFilterCategory(e.target.value); setPage(1); }}
+              type="text"
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              aria-label="Search records"
             />
-          </div>
-          {canUseAdvancedFilters ? (
-            <div className="field">
-              <label htmlFor="search-filter">Search</label>
-              <input
-                id="search-filter"
-                placeholder="Search notes/category"
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              />
-            </div>
-          ) : null}
-          <div className="field">
-            <label htmlFor="from-filter">Date from</label>
+          )}
+
+          <div className="filter-date-group">
             <input
-              id="from-filter"
               type="date"
               value={filterFrom}
               onChange={(e) => { setFilterFrom(e.target.value); setPage(1); }}
+              aria-label="Date from"
             />
-          </div>
-          <div className="field">
-            <label htmlFor="to-filter">Date to</label>
+            <span className="filter-date-sep">→</span>
             <input
-              id="to-filter"
               type="date"
               value={filterTo}
               onChange={(e) => { setFilterTo(e.target.value); setPage(1); }}
+              aria-label="Date to"
             />
           </div>
-          <div className="field">
-            <label htmlFor="records-count">Result count</label>
-            <input id="records-count" value={`${total} records`} readOnly aria-readonly="true" />
+
+          {canUseAdvancedFilters && (
+            <div className="filter-amount-group">
+              <input
+                type="number"
+                placeholder="Min $"
+                value={amountMin}
+                onChange={(e) => { setAmountMin(e.target.value); setPage(1); }}
+                aria-label="Minimum amount"
+              />
+              <input
+                type="number"
+                placeholder="Max $"
+                value={amountMax}
+                onChange={(e) => { setAmountMax(e.target.value); setPage(1); }}
+                aria-label="Maximum amount"
+              />
+            </div>
+          )}
+
+          {hasActiveFilters && (
+            <button className="btn-ghost filter-clear-btn" onClick={clearAllFilters}>
+              Clear All
+            </button>
+          )}
+        </div>
+
+        {/* Active filter chips */}
+        {hasActiveFilters && (
+          <div className="filter-chips">
+            {filterType && <FilterChip label={`Type: ${filterType}`} onClear={() => setFilterType("")} />}
+            {filterCategory && <FilterChip label={`Category: ${filterCategory}`} onClear={() => setFilterCategory("")} />}
+            {search && <FilterChip label={`Search: ${search}`} onClear={() => setSearch("")} />}
+            {filterFrom && <FilterChip label={`From: ${filterFrom}`} onClear={() => setFilterFrom("")} />}
+            {filterTo && <FilterChip label={`To: ${filterTo}`} onClear={() => setFilterTo("")} />}
+            {amountMin && <FilterChip label={`Min: $${amountMin}`} onClear={() => setAmountMin("")} />}
+            {amountMax && <FilterChip label={`Max: $${amountMax}`} onClear={() => setAmountMax("")} />}
           </div>
-          {canUseAdvancedFilters ? (
-            <>
-              <div className="field">
-                <label htmlFor="amount-min-filter">Amount min</label>
-                <input
-                  id="amount-min-filter"
-                  type="number"
-                  step="0.01"
-                  value={amountMin}
-                  onChange={(e) => { setAmountMin(e.target.value); setPage(1); }}
-                />
-              </div>
-              <div className="field">
-                <label htmlFor="amount-max-filter">Amount max</label>
-                <input
-                  id="amount-max-filter"
-                  type="number"
-                  step="0.01"
-                  value={amountMax}
-                  onChange={(e) => { setAmountMax(e.target.value); setPage(1); }}
-                />
-              </div>
-            </>
-          ) : null}
-          <div className="field">
-            <label htmlFor="active-filters">Active filters</label>
-            <input
-              id="active-filters"
-              value={[
-                filterType && `type=${filterType}`,
-                filterCategory && `category=${filterCategory}`,
-                canUseAdvancedFilters && search && `search=${search}`,
-                canUseAdvancedFilters && amountMin && `amount_min=${amountMin}`,
-                canUseAdvancedFilters && amountMax && `amount_max=${amountMax}`,
-                filterFrom && `date_from=${filterFrom}`,
-                filterTo && `date_to=${filterTo}`,
-              ].filter(Boolean).join(" | ") || "none"}
-              readOnly
-              aria-readonly="true"
-            />
+        )}
+      </section>
+
+      {/* ─── Category Breakdown (Compact) ─── */}
+      {categoryEntries.length > 0 && (
+        <section className="card reveal compact-categories" aria-label="Top categories">
+          <div className="compact-categories-header">
+            <h2>Top Categories</h2>
+            <span className="muted">{records.length} transactions on this page</span>
           </div>
-        </div>
-      </section>
-
-      <section className="card">
-        <h2>Record Insights</h2>
-        <div className="grid cols-4">
-          <article className="kpi-card income">
-            <div className="muted">Income in page</div>
-            <p className="metric-value">{formatMoney(incomeTotal)}</p>
-          </article>
-          <article className="kpi-card expense">
-            <div className="muted">Expense in page</div>
-            <p className="metric-value">{formatMoney(expenseTotal)}</p>
-          </article>
-          <article className="kpi-card net">
-            <div className="muted">Net in page</div>
-            <p className="metric-value">{formatMoney(netTotal)}</p>
-          </article>
-          <article className="kpi-card records">
-            <div className="muted">Transactions shown</div>
-            <p className="metric-value">{records.length}</p>
-          </article>
-        </div>
-      </section>
-
-      <section className="card">
-        <h2>Top Categories</h2>
-        <div className="category-bars" aria-label="Top categories chart">
-          {categoryEntries.length === 0 && <p className="muted">No records in this page yet.</p>}
-          {categoryEntries.map(([category, amount]) => {
-            const width = totalCategoryAmount > 0 ? Math.max((amount / totalCategoryAmount) * 100, 4) : 4;
-            return (
-              <div key={category} className="category-row">
-                <div className="category-title">
-                  <span>{category}</span>
-                  <span>{formatMoney(amount)}</span>
+          <div className="category-bars-horizontal">
+            {categoryEntries.map(([category, amount]) => {
+              const width = totalCategoryAmount > 0 ? Math.max((amount / totalCategoryAmount) * 100, 4) : 4;
+              return (
+                <div key={category} className="category-bar-h">
+                  <span className="category-bar-label">{category}</span>
+                  <div className="category-bar-track">
+                    <div className="bar-fill" style={{ width: `${width}%` }} />
+                  </div>
+                  <span className="category-bar-amount">{formatMoney(amount)}</span>
                 </div>
-                <div className="bar-track" aria-hidden="true">
-                  <div className="bar-fill" style={{ width: `${width}%` }} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
-      <section className="card" aria-label="Records table">
+      {/* ─── Records Table ─── */}
+      <section className="card reveal" aria-label="Records table">
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Type</th>
+                <th style={{ width: '50px' }}>Type</th>
                 <th>Category</th>
                 <th>Amount</th>
-                <th>Notes</th>
+                <th className="hide-mobile">Notes</th>
                 <th>Date</th>
-                <th>Actions</th>
+                <th style={{ width: '80px' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {records.map((r) => (
-                <tr key={r.id}>
-                  <td>
-                    <span className={`type-pill ${r.record_type}`}>{r.record_type}</span>
-                  </td>
-                  <td>{r.category}</td>
-                  <td>{r.amount}</td>
-                  <td className="truncate-cell">{r.description || "-"}</td>
-                  <td>{new Date(r.recorded_at).toLocaleDateString()}</td>
-                  <td>
-                    {onView && <button onClick={() => onView(r.id)}>View</button>}
+              {records.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="muted" style={{ textAlign: 'center', padding: '2rem' }}>
+                    No records found. {hasActiveFilters && "Try adjusting your filters."}
                   </td>
                 </tr>
-              ))}
+              ) : (
+                records.map((r) => (
+                  <tr key={r.id} onClick={() => onView?.(r.id)}>
+                    <td>
+                      <TransactionArrow type={r.record_type} />
+                    </td>
+                    <td className="cell-category">{r.category}</td>
+                    <td className={`cell-amount ${r.record_type}`}>
+                      {r.record_type === "income" ? "+" : "-"}${r.amount}
+                    </td>
+                    <td className="truncate-cell hide-mobile">{r.description || "—"}</td>
+                    <td className="cell-date">
+                      {new Date(r.recorded_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                    </td>
+                    <td>
+                      {onView && (
+                        <button 
+                          className="btn-ghost btn-view"
+                          onClick={(e) => { e.stopPropagation(); onView(r.id); }}
+                        >
+                          View
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </section>
 
-      <div className="actions">
-        <button disabled={page <= 1} onClick={() => setPage(page - 1)}>Prev</button>
-        <span className="muted">Page {page} of {Math.ceil(total / 20) || 1}</span>
-        <button disabled={page * 20 >= total} onClick={() => setPage(page + 1)}>Next</button>
-      </div>
+      {/* ─── Pagination ─── */}
+      <nav className="pagination" aria-label="Records pagination">
+        <button 
+          className="btn-ghost" 
+          disabled={page <= 1} 
+          onClick={() => setPage(page - 1)}
+        >
+          ← Previous
+        </button>
+        <span className="pagination-info">
+          Page <strong>{page}</strong> of <strong>{totalPages}</strong>
+        </span>
+        <button 
+          className="btn-ghost" 
+          disabled={page >= totalPages} 
+          onClick={() => setPage(page + 1)}
+        >
+          Next →
+        </button>
+      </nav>
     </div>
   );
 }
