@@ -30,7 +30,7 @@ app = FastAPI(
         {"name": "users", "description": "Admin user CRUD operations"},
         {"name": "records", "description": "Financial record CRUD and filtering"},
         {"name": "dashboard", "description": "Analytics and dashboard aggregations"},
-        {"name": "export", "description": "Data export in CSV and text formats"},
+        {"name": "export", "description": "Data export in CSV and PDF formats"},
     ],
 )
 app.state.limiter = limiter

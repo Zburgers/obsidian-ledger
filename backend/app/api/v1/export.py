@@ -9,7 +9,15 @@ from app.services import export_service
 router = APIRouter(prefix="/export", tags=["export"])
 
 
-@router.get("/csv")
+@router.get(
+    "/csv",
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"text/csv": {}},
+        }
+    },
+)
 async def export_csv(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -22,14 +30,22 @@ async def export_csv(
     )
 
 
-@router.get("/txt")
-async def export_txt(
+@router.get(
+    "/pdf",
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {"application/pdf": {}},
+        }
+    },
+)
+async def export_pdf(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    txt_bytes = await export_service.get_records_text(db, current_user)
+    pdf_bytes = await export_service.get_records_pdf(db, current_user)
     return Response(
-        content=txt_bytes,
-        media_type="text/plain",
-        headers={"Content-Disposition": "attachment; filename=records.txt"},
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=records.pdf"},
     )

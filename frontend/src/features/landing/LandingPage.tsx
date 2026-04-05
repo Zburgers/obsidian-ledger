@@ -415,7 +415,7 @@ export function LandingPage() {
             </div>
             <div className="demo-feature">
               {Icons.check}
-              <span>One-click CSV and TXT exports</span>
+              <span>One-click CSV and PDF exports</span>
             </div>
           </div>
 

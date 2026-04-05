@@ -25,7 +25,7 @@ describe("API contract", () => {
     expect(content).toContain("/dashboard/trends");
     expect(content).toContain("/dashboard/recent");
     expect(content).toContain("/export/csv");
-    expect(content).toContain("/export/txt");
+    expect(content).toContain("/export/pdf");
   });
 
   it("types file contains expected schema types", () => {

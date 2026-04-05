@@ -268,14 +268,14 @@ Authorization: Bearer <token>
 
 Returns `text/csv` file download.
 
-### Text Export
+### PDF Export
 
 ```http
-GET /api/v1/export/txt
+GET /api/v1/export/pdf
 Authorization: Bearer <token>
 ```
 
-Returns `text/plain` report.
+Returns `application/pdf` report.
 
 ## Error Responses
 

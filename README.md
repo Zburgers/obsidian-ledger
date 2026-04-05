@@ -20,7 +20,7 @@ graph TB
         Users[Users CRUD]
         Records[Records CRUD]
         Dashboard[Dashboard Agg]
-        Export[CSV/TXT Export]
+        Export[CSV/PDF Export]
     end
 
     subgraph Database
@@ -163,7 +163,7 @@ npm run dev
 | Dashboard summary | Yes | Yes | Yes |
 | Recent records list (read-only) | Yes | Yes | Yes |
 | Basic filters (`type`, `category`, `date_from`, `date_to`) | Yes | Yes | Yes |
-| Export CSV/TXT | Yes | Yes | Yes |
+| Export CSV/PDF | Yes | Yes | Yes |
 | Advanced filters (`search`, `amount_min`, `amount_max`) | No | Yes | Yes |
 | Category breakdown | No | Yes | Yes |
 | Monthly trends | No | Yes | Yes |
@@ -202,7 +202,7 @@ npm run dev
 
 ### Export
 - `GET /api/v1/export/csv` - Download CSV
-- `GET /api/v1/export/txt` - Download text report
+- `GET /api/v1/export/pdf` - Download PDF report
 
 Full OpenAPI spec: `http://localhost:8000/openapi.json`
 

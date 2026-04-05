@@ -959,7 +959,8 @@
             "content": {
               "application/json": {
                 "schema": {}
-              }
+              },
+              "text/csv": {}
             }
           }
         },
@@ -970,20 +971,21 @@
         ]
       }
     },
-    "/api/v1/export/txt": {
+    "/api/v1/export/pdf": {
       "get": {
         "tags": [
           "export"
         ],
-        "summary": "Export Txt",
-        "operationId": "export_txt_api_v1_export_txt_get",
+        "summary": "Export Pdf",
+        "operationId": "export_pdf_api_v1_export_pdf_get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
-              }
+              },
+              "application/pdf": {}
             }
           }
         },
@@ -1778,6 +1780,13 @@
           "type": {
             "type": "string",
             "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
           }
         },
         "type": "object",
@@ -1815,7 +1824,7 @@
     },
     {
       "name": "export",
-      "description": "Data export in CSV and text formats"
+      "description": "Data export in CSV and PDF formats"
     }
   ]
 }

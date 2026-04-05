@@ -264,15 +264,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/export/txt": {
+    "/api/v1/export/pdf": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Export Txt */
-        get: operations["export_txt_api_v1_export_txt_get"];
+        /** Export Pdf */
+        get: operations["export_pdf_api_v1_export_pdf_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -544,6 +544,10 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
         };
     };
     responses: never;
@@ -1139,11 +1143,12 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                    "text/csv": unknown;
                 };
             };
         };
     };
-    export_txt_api_v1_export_txt_get: {
+    export_pdf_api_v1_export_pdf_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1159,6 +1164,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                    "application/pdf": unknown;
                 };
             };
         };
