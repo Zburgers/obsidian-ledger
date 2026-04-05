@@ -75,9 +75,7 @@ async def health():
     except Exception as exc:  # pragma: no cover - exercised in deployment
         database_error = str(exc)
 
-    frontend_target = (
-        settings.cors_origins[0] if settings.cors_origins else "http://localhost:5173"
-    )
+    frontend_target = settings.frontend_internal_url
     parsed_frontend_url = urlparse(frontend_target)
     frontend_host = parsed_frontend_url.hostname or "localhost"
     frontend_port = parsed_frontend_url.port or 5173

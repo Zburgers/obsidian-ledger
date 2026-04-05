@@ -24,5 +24,5 @@ async def test_health_returns_ok(client):
     assert "port" in services["database"]
 
     assert services["frontend"]["status"] in {"ok", "down"}
-    assert "host" in services["frontend"]
-    assert "port" in services["frontend"]
+    assert services["frontend"]["host"] == "frontend"
+    assert services["frontend"]["port"] == 5173
