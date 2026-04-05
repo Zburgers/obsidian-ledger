@@ -8,7 +8,7 @@ services:
     ports: ["${DB_HOST_PORT:-9000}:5432"]
     volumes: ["pgdata:/var/lib/postgresql/data"]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U fintrack"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fintrack} -d ${POSTGRES_DB:-fintrack}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -19,7 +19,7 @@ services:
       dockerfile: ./backend/Dockerfile
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://fintrack:fintrack@db:5432/fintrack}
-      SECRET_KEY: ${SECRET_KEY:-change-me-in-production-use-a-long-random-string}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set for production-safe deploys}
       FRONTEND_INTERNAL_URL: ${FRONTEND_INTERNAL_URL:-http://frontend:5173}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-15}
       REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
@@ -34,7 +34,9 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_BASE: "http://localhost:${BACKEND_HOST_PORT:-9001}/api/v1"
+        VITE_API_BASE: "${VITE_API_BASE:-http://localhost:${BACKEND_HOST_PORT:-9001}/api/v1}"
+        VITE_API_HOST: "${VITE_API_HOST:-localhost}"
+        VITE_API_PORT: "${VITE_API_PORT:-${BACKEND_HOST_PORT:-9001}}"
     ports: ["${FRONTEND_HOST_PORT:-9002}:5173"]
     depends_on: [backend]
 
