@@ -40,7 +40,7 @@ describe("Protected routing", () => {
         <App />
       </MemoryRouter>
     );
-    expect(screen.getByText(/dashboard/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
   });
 
   it("shows login form with email and password fields", () => {

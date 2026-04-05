@@ -44,8 +44,10 @@ describe("Records page", () => {
         </Routes>
       </MemoryRouter>
     );
-    expect(await screen.findByText("Food")).toBeInTheDocument();
-    expect(screen.getByText("Salary")).toBeInTheDocument();
+    const foodCells = await screen.findAllByText("Food");
+    const salaryCells = screen.getAllByText("Salary");
+    expect(foodCells.length).toBeGreaterThan(0);
+    expect(salaryCells.length).toBeGreaterThan(0);
   });
 
   it("shows loading state initially", () => {
@@ -68,7 +70,8 @@ describe("Records page", () => {
         </Routes>
       </MemoryRouter>
     );
-    expect(await screen.findByText("Food")).toBeInTheDocument();
+    const foodCells = await screen.findAllByText("Food");
+    expect(foodCells.length).toBeGreaterThan(0);
     expect(mockListRecords).toHaveBeenCalledWith("page=1&page_size=20");
   });
 });

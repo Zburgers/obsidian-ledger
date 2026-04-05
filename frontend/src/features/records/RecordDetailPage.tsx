@@ -28,16 +28,22 @@ export function RecordDetailPage({ recordId, onBack }: { recordId: string; onBac
   if (!record) return <p>Record not found</p>;
 
   return (
-    <div>
-      <h1>Record Detail</h1>
-      <dl>
-        <dt>Type</dt><dd>{record.record_type}</dd>
-        <dt>Category</dt><dd>{record.category}</dd>
-        <dt>Amount</dt><dd>{record.amount}</dd>
-        <dt>Description</dt><dd>{record.description || "-"}</dd>
-        <dt>Date</dt><dd>{new Date(record.recorded_at).toLocaleString()}</dd>
-      </dl>
-      <button onClick={onBack}>Back</button>
+    <div className="grid">
+      <div className="page-header">
+        <h1 className="page-title">Record Detail</h1>
+      </div>
+      <section className="card">
+        <dl className="description-list">
+          <dt>Type</dt><dd>{record.record_type}</dd>
+          <dt>Category</dt><dd>{record.category}</dd>
+          <dt>Amount</dt><dd>{record.amount}</dd>
+          <dt>Description</dt><dd>{record.description || "-"}</dd>
+          <dt>Date</dt><dd>{new Date(record.recorded_at).toLocaleString()}</dd>
+        </dl>
+        <div className="actions" style={{ marginTop: "1rem" }}>
+          <button onClick={onBack}>Back</button>
+        </div>
+      </section>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, NavLink, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, NavLink } from "react-router-dom";
 import { LoginPage } from "./features/auth/LoginPage";
 import { RegisterPage } from "./features/auth/RegisterPage";
 import { UsersPage } from "./features/users/UsersPage";
@@ -6,46 +6,51 @@ import { RecordsPage } from "./features/records/RecordsPage";
 import { RecordForm } from "./features/records/RecordForm";
 import { RecordDetailPage } from "./features/records/RecordDetailPage";
 import { DashboardPage } from "./features/dashboard/DashboardPage";
-import { ProtectedRoute, AdminRoute } from "./router";
+import { ProtectedRoute, AdminRoute, PublicOnlyRoute } from "./router";
 import { useState, useCallback, type ReactNode } from "react";
 import { useAuthStore } from "./features/auth/authStore";
 
 function AppLayout({ children }: { children: ReactNode }) {
-  const location = useLocation();
   const role = useAuthStore((s) => s.role);
   const email = useAuthStore((s) => s.email);
   const logout = useAuthStore((s) => s.logout);
 
+  const navItems = [
+    { to: "/dashboard", label: "Dashboard" },
+    { to: "/records", label: "Records" },
+    ...(role === "admin" ? [{ to: "/users", label: "Users" }] : []),
+  ];
+
   return (
-    <div className="app-shell">
-      <div className="topbar-wrap">
-        <header className="topbar" aria-label="Main navigation">
-          <div className="brand">FinTrack</div>
-          <nav className="topbar-nav">
-            <NavLink to="/dashboard" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
-              Dashboard
+    <div className="app-layout">
+      <aside className="sidebar" aria-label="Primary">
+        <div className="brand">FinTrack</div>
+        <p className="muted sidebar-copy">Business finance control center</p>
+        <nav className="sidebar-nav">
+          {navItems.map((item) => (
+            <NavLink key={item.to} to={item.to} className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
+              {item.label}
             </NavLink>
-            <NavLink to="/records" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
-              Records
-            </NavLink>
-            {role === "admin" && (
-              <NavLink to="/users" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
-                Users
-              </NavLink>
-            )}
-          </nav>
+          ))}
+        </nav>
+      </aside>
+
+      <div className="content-shell">
+        <header className="topbar" aria-label="User context">
+          <div className="topbar-title-group">
+            <p className="topbar-kicker">Finance Workspace</p>
+            <p className="muted">Live records, user management, and exports</p>
+          </div>
           <div className="topbar-right">
             {role && <span className="role-chip">{role}</span>}
             <span>{email ?? "Signed in"}</span>
-            {location.pathname !== "/login" && (
-              <button type="button" onClick={logout} className="btn-ghost">
-                Logout
-              </button>
-            )}
+            <button type="button" onClick={logout} className="btn-ghost">
+              Logout
+            </button>
           </div>
         </header>
+        <main className="page-wrap">{children}</main>
       </div>
-      <main className="page-wrap">{children}</main>
     </div>
   );
 }
@@ -77,8 +82,10 @@ export function App() {
 
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route element={<PublicOnlyRoute />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+      </Route>
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<AppLayout><DashboardPage /></AppLayout>} />
         <Route path="/records" element={

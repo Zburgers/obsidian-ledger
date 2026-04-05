@@ -1,0 +1,45 @@
+- generic [ref=e11]:
+  - heading "Dashboard" [level=1] [ref=e12]
+  - generic [ref=e13]:
+    - heading "Summary" [level=2] [ref=e14]
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - strong [ref=e17]: "Income:"
+        - text: "0"
+      - generic [ref=e18]:
+        - strong [ref=e19]: "Expenses:"
+        - text: "0"
+      - generic [ref=e20]:
+        - strong [ref=e21]: "Net:"
+        - text: "0"
+      - generic [ref=e22]:
+        - strong [ref=e23]: "Records:"
+        - text: "0"
+  - generic [ref=e24]:
+    - heading "By Category" [level=2] [ref=e25]
+    - table [ref=e26]:
+      - rowgroup [ref=e27]:
+        - row "Category Total Count" [ref=e28]:
+          - columnheader "Category" [ref=e29]
+          - columnheader "Total" [ref=e30]
+          - columnheader "Count" [ref=e31]
+      - rowgroup
+  - generic [ref=e32]:
+    - heading "Trends" [level=2] [ref=e33]
+    - table [ref=e34]:
+      - rowgroup [ref=e35]:
+        - row "Period Income Expense" [ref=e36]:
+          - columnheader "Period" [ref=e37]
+          - columnheader "Income" [ref=e38]
+          - columnheader "Expense" [ref=e39]
+      - rowgroup
+  - generic [ref=e40]:
+    - heading "Recent Records" [level=2] [ref=e41]
+    - table [ref=e42]:
+      - rowgroup [ref=e43]:
+        - row "Type Category Amount Date" [ref=e44]:
+          - columnheader "Type" [ref=e45]
+          - columnheader "Category" [ref=e46]
+          - columnheader "Amount" [ref=e47]
+          - columnheader "Date" [ref=e48]
+      - rowgroup

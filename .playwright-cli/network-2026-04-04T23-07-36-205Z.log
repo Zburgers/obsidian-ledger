@@ -1,0 +1,1 @@
+[GET] http://localhost:8000/api/v1/records?page=1&page_size=20 => [200] OK

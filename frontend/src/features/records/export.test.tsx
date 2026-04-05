@@ -49,6 +49,6 @@ describe("Records export", () => {
       </MemoryRouter>
     );
     expect(await screen.findByText("Export CSV")).toBeInTheDocument();
-    expect(screen.getByText("Export TXT")).toBeInTheDocument();
+    expect(screen.getByText("Export PDF")).toBeInTheDocument();
   });
 });

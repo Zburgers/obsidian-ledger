@@ -1,0 +1,25 @@
+- generic [ref=e3]:
+  - heading "Records" [level=1] [ref=e4]
+  - generic [ref=e5]:
+    - button "Export CSV" [ref=e6]
+    - button "Export TXT" [ref=e7]
+  - generic [ref=e8]:
+    - combobox [ref=e9]:
+      - option "All Types" [selected]
+      - option "Income"
+      - option "Expense"
+    - textbox "Filter by category" [ref=e10]
+  - table [ref=e11]:
+    - rowgroup [ref=e12]:
+      - row "Type Category Amount Description Date Actions" [ref=e13]:
+        - columnheader "Type" [ref=e14]
+        - columnheader "Category" [ref=e15]
+        - columnheader "Amount" [ref=e16]
+        - columnheader "Description" [ref=e17]
+        - columnheader "Date" [ref=e18]
+        - columnheader "Actions" [ref=e19]
+    - rowgroup
+  - generic [ref=e20]:
+    - button "Prev" [disabled] [ref=e21]
+    - generic [ref=e22]: Page 1 of 1
+    - button "Next" [disabled] [ref=e23]

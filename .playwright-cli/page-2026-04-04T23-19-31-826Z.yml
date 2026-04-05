@@ -1,0 +1,42 @@
+- generic [ref=e3]:
+  - heading "Records" [level=1] [ref=e4]
+  - generic [ref=e5]:
+    - button "New Record" [ref=e6]
+    - button "Export CSV" [ref=e7]
+    - button "Export TXT" [ref=e8]
+  - generic [ref=e9]:
+    - combobox [ref=e10]:
+      - option "All Types" [selected]
+      - option "Income"
+      - option "Expense"
+    - textbox "Filter by category" [ref=e11]
+  - table [ref=e12]:
+    - rowgroup [ref=e13]:
+      - row "Type Category Amount Description Date Actions" [ref=e14]:
+        - columnheader "Type" [ref=e15]
+        - columnheader "Category" [ref=e16]
+        - columnheader "Amount" [ref=e17]
+        - columnheader "Description" [ref=e18]
+        - columnheader "Date" [ref=e19]
+        - columnheader "Actions" [ref=e20]
+    - rowgroup [ref=e21]:
+      - row "expense RBAC 1.00 - 05/04/2026 View" [ref=e22]:
+        - cell "expense" [ref=e23]
+        - cell "RBAC" [ref=e24]
+        - cell "1.00" [ref=e25]
+        - cell "-" [ref=e26]
+        - cell "05/04/2026" [ref=e27]
+        - cell "View" [ref=e28]:
+          - button "View" [ref=e29]
+      - row "expense RBAC 1.00 - 05/04/2026 View" [ref=e30]:
+        - cell "expense" [ref=e31]
+        - cell "RBAC" [ref=e32]
+        - cell "1.00" [ref=e33]
+        - cell "-" [ref=e34]
+        - cell "05/04/2026" [ref=e35]
+        - cell "View" [ref=e36]:
+          - button "View" [ref=e37]
+  - generic [ref=e38]:
+    - button "Prev" [disabled] [ref=e39]
+    - generic [ref=e40]: Page 1 of 1
+    - button "Next" [disabled] [ref=e41]
