@@ -77,11 +77,57 @@ docker compose up -d --build
 docker compose exec backend uv run alembic upgrade head
 
 # Seed demo data
-docker compose exec backend uv run python scripts/seed_demo_data.py
+docker compose exec -w /app -e PYTHONPATH=/app backend .venv/bin/python scripts/seed_demo_data.py
 
 # Open the app
 # Frontend: http://localhost:5173
 # API docs: http://localhost:8000/docs
+```
+
+### Seeding Demo Data
+
+The project includes a seed script that creates demo users and realistic financial transaction data for testing and development.
+
+#### Demo Users Created
+
+| Email | Password | Role | Purpose |
+|-------|----------|------|---------|
+| `admin@demo.com` | `Admin123!` | Admin | Full access, can manage users and records |
+| `analyst@demo.com` | `Analyst123!` | Analyst | Can view own records and analytics |
+| `viewer@demo.com` | `Viewer123!` | Viewer | Read-only access to own records |
+
+#### Demo Data Generated
+
+- **1,202 Financial Records**: Randomized transactions distributed across ~240 days
+  - 446 income transactions (38%): salary, bonus, interest, refunds, etc.
+  - 756 expense transactions (62%): rent, utilities, groceries, entertainment, etc.
+  - Amounts range: income ($250-$4,500), expenses ($18-$1,450)
+  - All records owned by `admin@demo.com` for analytics testing
+
+#### Running the Seed Script
+
+**Normal mode** (creates users/records only if missing):
+```bash
+docker compose exec -w /app -e PYTHONPATH=/app backend .venv/bin/python scripts/seed_demo_data.py
+```
+
+**Fresh mode** (deletes all existing data and reseeds):
+```bash
+docker compose exec -w /app -e PYTHONPATH=/app backend .venv/bin/python scripts/seed_demo_data.py --fresh
+```
+
+#### Verification
+
+Check that the data was created:
+```bash
+# View users
+docker exec zorvyn-db-1 psql -U fintrack -d fintrack -c "SELECT email, role FROM users WHERE is_deleted = false;"
+
+# View record count
+docker exec zorvyn-db-1 psql -U fintrack -d fintrack -c "SELECT COUNT(*) FROM records WHERE is_deleted = false;"
+
+# View record distribution by type
+docker exec zorvyn-db-1 psql -U fintrack -d fintrack -c "SELECT record_type, COUNT(*) FROM records WHERE is_deleted = false GROUP BY record_type;"
 ```
 
 ### Local Development (without Docker)

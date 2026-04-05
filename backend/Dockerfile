@@ -9,10 +9,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl \
 ENV PATH="/root/.local/bin:$PATH"
 ENV UV_PROJECT_ENVIRONMENT="/app/.venv"
 
-COPY pyproject.toml uv.lock ./
+# Copy backend app files (pyproject.toml, uv.lock, app source)
+COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv sync --frozen --no-install-project
 
-COPY . .
+# Copy backend application code
+COPY backend/app ./app
+
+# Copy scripts for seeding/management tasks
+COPY scripts /app/scripts
 
 ENV PYTHONUNBUFFERED=1
 

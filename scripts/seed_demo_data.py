@@ -16,6 +16,12 @@ import sys
 from datetime import datetime, timedelta
 from decimal import Decimal
 
+# Add parent directory to path so 'app' module can be imported
+script_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(script_dir)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
 os.environ.setdefault(
     "DATABASE_URL", "postgresql+asyncpg://fintrack:fintrack@db:5432/fintrack"
 )
@@ -141,7 +147,7 @@ def make_record(index: int, owner_id, now: datetime) -> Record:
 
 async def seed(fresh: bool = False):
     """Seed the database with demo data.
-    
+
     Args:
         fresh: If True, delete all existing users and records before seeding.
                If False, only create missing users and skip records if any exist.
@@ -203,7 +209,7 @@ async def seed(fresh: bool = False):
             select(func.count()).select_from(Record)
         )
         existing_count = existing_count_result.scalar_one()
-        
+
         if existing_count > 0 and not fresh:
             print(
                 f"ℹ Records already exist ({existing_count}). Skipping record generation.\n"
@@ -217,7 +223,7 @@ async def seed(fresh: bool = False):
         now = datetime.now()
         target_records = 1200
         print(f"\n📝 Generating {target_records} transaction records...")
-        
+
         for i in range(target_records):
             db.add(make_record(i, admin.id, now))
             if (i + 1) % 200 == 0:
@@ -253,17 +259,8 @@ async def seed(fresh: bool = False):
         )
 
     await engine.dispose()
-            )
-        )
-
-        await db.commit()
-        print(
-            "Seeded demo users (admin/analyst/viewer) and "
-            f"{target_records + 2} records for dashboard demos."
-        )
-
-    await engine.dispose()
 
 
 if __name__ == "__main__":
-    asyncio.run(seed())
+    fresh = "--fresh" in sys.argv
+    asyncio.run(seed(fresh=fresh))
