@@ -78,3 +78,48 @@ async def get_recent(db: AsyncSession, user: User, limit: int = 10) -> list[Reco
     )
     result = await db.execute(base)
     return list(result.scalars().all())
+
+
+def _month_range(period: str) -> tuple[datetime, datetime]:
+    start = datetime.strptime(period, "%Y-%m")
+    if start.month == 12:
+        end = datetime(start.year + 1, 1, 1)
+    else:
+        end = datetime(start.year, start.month + 1, 1)
+    return start, end
+
+
+async def _period_totals(db: AsyncSession, user: User, period: str) -> dict:
+    start, end = _month_range(period)
+    base = select(Record.record_type, Record.amount).where(
+        _user_filter(user), Record.recorded_at >= start, Record.recorded_at < end
+    )
+    result = await db.execute(base)
+    rows = result.all()
+
+    income = Decimal("0")
+    expense = Decimal("0")
+    for row in rows:
+        if row.record_type == RecordType.income:
+            income += row.amount
+        else:
+            expense += row.amount
+
+    return {"income": income, "expense": expense, "net": income - expense}
+
+
+async def get_monthly_comparison(
+    db: AsyncSession, user: User, period_a: str, period_b: str
+) -> dict:
+    totals_a = await _period_totals(db, user, period_a)
+    totals_b = await _period_totals(db, user, period_b)
+
+    return {
+        "period_a": period_a,
+        "period_b": period_b,
+        "totals_a": totals_a,
+        "totals_b": totals_b,
+        "income_delta": totals_b["income"] - totals_a["income"],
+        "expense_delta": totals_b["expense"] - totals_a["expense"],
+        "net_delta": totals_b["net"] - totals_a["net"],
+    }

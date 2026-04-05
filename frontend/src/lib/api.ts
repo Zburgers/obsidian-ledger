@@ -99,4 +99,15 @@ export const api = {
 
   getDashboardRecent: () =>
     request<{ items: Array<{ id: string; record_type: string; category: string; amount: string; description: string | null; recorded_at: string }> }>("/dashboard/recent"),
+
+  getDashboardComparison: (periodA: string, periodB: string) =>
+    request<{
+      period_a: string;
+      period_b: string;
+      totals_a: { income: string; expense: string; net: string };
+      totals_b: { income: string; expense: string; net: string };
+      income_delta: string;
+      expense_delta: string;
+      net_delta: string;
+    }>(`/dashboard/comparison?period_a=${encodeURIComponent(periodA)}&period_b=${encodeURIComponent(periodB)}`),
 };

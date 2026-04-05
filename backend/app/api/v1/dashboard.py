@@ -5,11 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.dependencies.auth import get_current_user
+from app.dependencies.permissions import require_analyst_or_admin
 from app.models.user import User
 from app.schemas.dashboard import (
     SummaryResponse,
     CategoryResponse,
     TrendsResponse,
+    ComparisonResponse,
     RecentResponse,
     RecordBrief,
 )
@@ -29,7 +31,7 @@ async def summary(
 
 @router.get("/by-category", response_model=CategoryResponse)
 async def by_category(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_analyst_or_admin),
     db: AsyncSession = Depends(get_db),
 ):
     items = await dashboard_service.get_by_category(db, current_user)
@@ -39,11 +41,24 @@ async def by_category(
 @router.get("/trends", response_model=TrendsResponse)
 async def trends(
     months: int = Query(6, ge=1, le=24),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_analyst_or_admin),
     db: AsyncSession = Depends(get_db),
 ):
     items = await dashboard_service.get_trends(db, current_user, months)
     return TrendsResponse(items=items)
+
+
+@router.get("/comparison", response_model=ComparisonResponse)
+async def comparison(
+    period_a: str = Query(..., pattern=r"^\d{4}-\d{2}$"),
+    period_b: str = Query(..., pattern=r"^\d{4}-\d{2}$"),
+    current_user: User = Depends(require_analyst_or_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    data = await dashboard_service.get_monthly_comparison(
+        db, current_user, period_a, period_b
+    )
+    return ComparisonResponse(**data)
 
 
 @router.get("/recent", response_model=RecentResponse)

@@ -21,6 +21,8 @@ async def list_records(
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     search: str | None = None,
+    amount_min: Decimal | None = None,
+    amount_max: Decimal | None = None,
 ) -> dict:
     base = select(Record).where(Record.is_deleted == False)
 
@@ -36,6 +38,10 @@ async def list_records(
     if search:
         safe = search.replace("%", r"\%").replace("_", r"\_")
         base = base.where(Record.description.ilike(f"%{safe}%", escape="\\"))
+    if amount_min is not None:
+        base = base.where(Record.amount >= amount_min)
+    if amount_max is not None:
+        base = base.where(Record.amount <= amount_max)
 
     count_result = await db.execute(select(func.count()).select_from(base.subquery()))
     total = count_result.scalar_one()

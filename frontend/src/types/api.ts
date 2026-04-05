@@ -213,6 +213,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dashboard/comparison": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Comparison */
+        get: operations["comparison_api_v1_dashboard_comparison_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/dashboard/recent": {
         parameters: {
             query?: never;
@@ -281,6 +298,30 @@ export interface components {
         CategoryResponse: {
             /** Items */
             items: components["schemas"]["CategoryItem"][];
+        };
+        /** ComparisonResponse */
+        ComparisonResponse: {
+            /** Period A */
+            period_a: string;
+            /** Period B */
+            period_b: string;
+            totals_a: components["schemas"]["ComparisonTotals"];
+            totals_b: components["schemas"]["ComparisonTotals"];
+            /** Income Delta */
+            income_delta: string;
+            /** Expense Delta */
+            expense_delta: string;
+            /** Net Delta */
+            net_delta: string;
+        };
+        /** ComparisonTotals */
+        ComparisonTotals: {
+            /** Income */
+            income: string;
+            /** Expense */
+            expense: string;
+            /** Net */
+            net: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -791,6 +832,8 @@ export interface operations {
                 date_from?: string | null;
                 date_to?: string | null;
                 search?: string | null;
+                amount_min?: number | string | null;
+                amount_max?: number | string | null;
             };
             header?: never;
             path?: never;
@@ -1004,6 +1047,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TrendsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    comparison_api_v1_dashboard_comparison_get: {
+        parameters: {
+            query: {
+                period_a: string;
+                period_b: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComparisonResponse"];
                 };
             };
             /** @description Validation Error */

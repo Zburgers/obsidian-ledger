@@ -486,6 +486,46 @@
               ],
               "title": "Search"
             }
+          },
+          {
+            "name": "amount_min",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Amount Min"
+            }
+          },
+          {
+            "name": "amount_max",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Amount Max"
+            }
           }
         ],
         "responses": {
@@ -798,6 +838,64 @@
         }
       }
     },
+    "/api/v1/dashboard/comparison": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Comparison",
+        "operationId": "comparison_api_v1_dashboard_comparison_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "period_a",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}$",
+              "title": "Period A"
+            }
+          },
+          {
+            "name": "period_b",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}$",
+              "title": "Period B"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComparisonResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/dashboard/recent": {
       "get": {
         "tags": [
@@ -938,6 +1036,76 @@
           "items"
         ],
         "title": "CategoryResponse"
+      },
+      "ComparisonResponse": {
+        "properties": {
+          "period_a": {
+            "type": "string",
+            "title": "Period A"
+          },
+          "period_b": {
+            "type": "string",
+            "title": "Period B"
+          },
+          "totals_a": {
+            "$ref": "#/components/schemas/ComparisonTotals"
+          },
+          "totals_b": {
+            "$ref": "#/components/schemas/ComparisonTotals"
+          },
+          "income_delta": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Income Delta"
+          },
+          "expense_delta": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Expense Delta"
+          },
+          "net_delta": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Net Delta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period_a",
+          "period_b",
+          "totals_a",
+          "totals_b",
+          "income_delta",
+          "expense_delta",
+          "net_delta"
+        ],
+        "title": "ComparisonResponse"
+      },
+      "ComparisonTotals": {
+        "properties": {
+          "income": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Income"
+          },
+          "expense": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Expense"
+          },
+          "net": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Net"
+          }
+        },
+        "type": "object",
+        "required": [
+          "income",
+          "expense",
+          "net"
+        ],
+        "title": "ComparisonTotals"
       },
       "HTTPValidationError": {
         "properties": {
@@ -1627,5 +1795,27 @@
         "scheme": "bearer"
       }
     }
-  }
+  },
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Authentication and user management"
+    },
+    {
+      "name": "users",
+      "description": "Admin user CRUD operations"
+    },
+    {
+      "name": "records",
+      "description": "Financial record CRUD and filtering"
+    },
+    {
+      "name": "dashboard",
+      "description": "Analytics and dashboard aggregations"
+    },
+    {
+      "name": "export",
+      "description": "Data export in CSV and text formats"
+    }
+  ]
 }

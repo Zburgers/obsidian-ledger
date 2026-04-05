@@ -2,13 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { RecordsPage } from "./RecordsPage";
+import { useAuthStore } from "../auth/authStore";
 
 const mockListRecords = vi.fn();
 
 vi.mock("../auth/authStore", () => ({
-  useAuthStore: {
-    getState: () => ({ accessToken: "test-token" }),
-  },
+  useAuthStore: vi.fn(),
 }));
 
 vi.mock("../../lib/api", () => ({
@@ -25,6 +24,15 @@ vi.mock("../../lib/api", () => ({
 describe("Records page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useAuthStore).mockImplementation(((selector: ((state: unknown) => unknown) | undefined) => {
+      const state = { accessToken: "test-token", role: "analyst" };
+      if (typeof selector === "function") {
+        return selector(state);
+      }
+      return state;
+    }) as typeof useAuthStore);
+    (useAuthStore as unknown as { getState: () => { accessToken: string } }).getState = () => ({ accessToken: "test-token" });
+
     mockListRecords.mockResolvedValue({
       items: [
         { id: "1", user_id: "u1", record_type: "expense", category: "Food", amount: "25.50", description: "Lunch", recorded_at: "2025-01-01T12:00:00Z", is_deleted: false },
@@ -73,5 +81,29 @@ describe("Records page", () => {
     const foodCells = await screen.findAllByText("Food");
     expect(foodCells.length).toBeGreaterThan(0);
     expect(mockListRecords).toHaveBeenCalledWith("page=1&page_size=20");
+  });
+
+  it("hides advanced filters for viewer role", async () => {
+    vi.mocked(useAuthStore).mockImplementation(((selector: ((state: unknown) => unknown) | undefined) => {
+      const state = { accessToken: "test-token", role: "viewer" };
+      if (typeof selector === "function") {
+        return selector(state);
+      }
+      return state;
+    }) as typeof useAuthStore);
+    (useAuthStore as unknown as { getState: () => { accessToken: string } }).getState = () => ({ accessToken: "test-token" });
+
+    render(
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<RecordsPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText("Filters")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Search")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Amount min")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Amount max")).not.toBeInTheDocument();
   });
 });

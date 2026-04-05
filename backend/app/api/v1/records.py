@@ -1,9 +1,14 @@
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.dependencies.auth import get_current_user
-from app.dependencies.permissions import require_admin
+from app.dependencies.permissions import (
+    require_admin,
+    ensure_analyst_or_admin,
+)
 from app.models.user import User
 from app.schemas.record import (
     RecordCreateRequest,
@@ -25,6 +30,8 @@ async def list_records_endpoint(
     date_from: str | None = Query(None),
     date_to: str | None = Query(None),
     search: str | None = Query(None),
+    amount_min: Decimal | None = Query(None),
+    amount_max: Decimal | None = Query(None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -32,8 +39,25 @@ async def list_records_endpoint(
 
     df = datetime.fromisoformat(date_from) if date_from else None
     dt = datetime.fromisoformat(date_to) if date_to else None
+
+    advanced_filters_requested = any(
+        value is not None for value in (search, amount_min, amount_max)
+    )
+    if advanced_filters_requested:
+        ensure_analyst_or_admin(current_user)
+
     result = await record_service.list_records(
-        db, current_user, page, page_size, type, category, df, dt, search
+        db,
+        current_user,
+        page,
+        page_size,
+        type,
+        category,
+        df,
+        dt,
+        search,
+        amount_min,
+        amount_max,
     )
     return RecordListResponse(
         items=[

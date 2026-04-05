@@ -30,6 +30,22 @@ class TrendsResponse(BaseModel):
     items: list[TrendItem]
 
 
+class ComparisonTotals(BaseModel):
+    income: Decimal
+    expense: Decimal
+    net: Decimal
+
+
+class ComparisonResponse(BaseModel):
+    period_a: str
+    period_b: str
+    totals_a: ComparisonTotals
+    totals_b: ComparisonTotals
+    income_delta: Decimal
+    expense_delta: Decimal
+    net_delta: Decimal
+
+
 class RecordBrief(BaseModel):
     id: str
     record_type: str

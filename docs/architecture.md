@@ -171,6 +171,21 @@ graph TB
     UUIDParse --> SQLEscape
 ```
 
+## Role and Capability Separation
+
+The role system is enforced backend-first through explicit capability checks:
+
+- `viewer`: report mode only (summary, recent records, basic record filters, exports)
+- `analyst`: viewer capabilities + insights mode (category breakdown, trends, monthly comparison, advanced record filters)
+- `admin`: analyst capabilities + mutation/admin controls (create/update/delete records, user management)
+
+Authorization is checked at API dependency level, not only in frontend presentation:
+
+- Dashboard insights endpoints (`/dashboard/by-category`, `/dashboard/trends`, `/dashboard/comparison`) require analyst-or-admin capability.
+- Record listing allows all roles, but advanced query predicates (`search`, `amount_min`, `amount_max`) are guarded for analyst-or-admin only.
+
+Frontend mirrors these capabilities so Viewer UI stays read-only and does not expose analyst interaction controls.
+
 ## Deployment
 
 ```mermaid

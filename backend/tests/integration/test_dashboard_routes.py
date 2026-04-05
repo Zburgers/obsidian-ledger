@@ -159,6 +159,17 @@ async def test_by_category_returns_grouped_data(client, admin_token, seed_record
 
 
 @pytest.mark.asyncio
+async def test_viewer_cannot_access_category_breakdown(
+    client, viewer_token, seed_records
+):
+    r = await client.get(
+        "/api/v1/dashboard/by-category",
+        headers={"Authorization": f"Bearer {viewer_token}"},
+    )
+    assert r.status_code == 403
+
+
+@pytest.mark.asyncio
 async def test_trends_returns_periods(client, admin_token, seed_records):
     r = await client.get(
         "/api/v1/dashboard/trends",
@@ -167,6 +178,61 @@ async def test_trends_returns_periods(client, admin_token, seed_records):
     assert r.status_code == 200
     body = r.json()
     assert "items" in body
+
+
+@pytest.mark.asyncio
+async def test_viewer_cannot_access_trends(client, viewer_token, seed_records):
+    r = await client.get(
+        "/api/v1/dashboard/trends",
+        headers={"Authorization": f"Bearer {viewer_token}"},
+    )
+    assert r.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_analyst_can_access_trends(client, analyst_token, seed_records):
+    r = await client.get(
+        "/api/v1/dashboard/trends",
+        headers={"Authorization": f"Bearer {analyst_token}"},
+    )
+    assert r.status_code == 200
+    assert "items" in r.json()
+
+
+@pytest.mark.asyncio
+async def test_viewer_cannot_access_monthly_comparison(
+    client, viewer_token, seed_records
+):
+    r = await client.get(
+        "/api/v1/dashboard/comparison?period_a=2026-01&period_b=2026-02",
+        headers={"Authorization": f"Bearer {viewer_token}"},
+    )
+    assert r.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_analyst_can_access_monthly_comparison(
+    client, analyst_token, seed_records
+):
+    r = await client.get(
+        "/api/v1/dashboard/comparison?period_a=2026-01&period_b=2026-02",
+        headers={"Authorization": f"Bearer {analyst_token}"},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["period_a"] == "2026-01"
+    assert body["period_b"] == "2026-02"
+    assert "income_delta" in body
+    assert "expense_delta" in body
+
+
+@pytest.mark.asyncio
+async def test_admin_can_access_monthly_comparison(client, admin_token, seed_records):
+    r = await client.get(
+        "/api/v1/dashboard/comparison?period_a=2026-01&period_b=2026-02",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert r.status_code == 200
 
 
 @pytest.mark.asyncio

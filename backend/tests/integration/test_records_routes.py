@@ -148,6 +148,41 @@ async def test_analyst_can_see_global_records(client, analyst_token, seed_admin_
 
 
 @pytest.mark.asyncio
+async def test_viewer_cannot_use_advanced_search_filter(
+    client, viewer_token, seed_admin_record
+):
+    r = await client.get(
+        "/api/v1/records?search=Seeded",
+        headers={"Authorization": f"Bearer {viewer_token}"},
+    )
+    assert r.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_viewer_cannot_use_amount_range_filters(
+    client, viewer_token, seed_admin_record
+):
+    r = await client.get(
+        "/api/v1/records?amount_min=10&amount_max=1000",
+        headers={"Authorization": f"Bearer {viewer_token}"},
+    )
+    assert r.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_analyst_can_use_advanced_filters(
+    client, analyst_token, seed_admin_record
+):
+    r = await client.get(
+        "/api/v1/records?search=Seeded&amount_min=100&amount_max=2000",
+        headers={"Authorization": f"Bearer {analyst_token}"},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["total"] >= 1
+
+
+@pytest.mark.asyncio
 async def test_admin_can_list_records_with_pagination(client, admin_token):
     for i in range(5):
         await client.post(

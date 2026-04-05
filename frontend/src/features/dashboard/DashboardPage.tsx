@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "../../lib/api";
+import { useAuthStore } from "../auth/authStore";
 
 interface Summary {
   total_income: string;
@@ -27,6 +28,28 @@ interface RecentItem {
   amount: string;
   description: string | null;
   recorded_at: string;
+}
+
+interface ComparisonData {
+  period_a: string;
+  period_b: string;
+  totals_a: { income: string; expense: string; net: string };
+  totals_b: { income: string; expense: string; net: string };
+  income_delta: string;
+  expense_delta: string;
+  net_delta: string;
+}
+
+function getComparisonPeriods(): { periodA: string; periodB: string } {
+  const now = new Date();
+  const periodBDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  const periodADate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const formatPeriod = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    return `${year}-${month}`;
+  };
+  return { periodA: formatPeriod(periodADate), periodB: formatPeriod(periodBDate) };
 }
 
 function parseAmount(value: string): number {
@@ -105,29 +128,44 @@ function DashboardEmptyState() {
 }
 
 export function DashboardPage() {
+  const role = useAuthStore((s) => s.role);
+  const canViewInsights = role === "analyst" || role === "admin";
   const [summary, setSummary] = useState<Summary | null>(null);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [trends, setTrends] = useState<TrendItem[]>([]);
+  const [comparison, setComparison] = useState<ComparisonData | null>(null);
   const [recent, setRecent] = useState<RecentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([
-      api.getDashboardSummary(),
-      api.getDashboardByCategory(),
-      api.getDashboardTrends(),
-      api.getDashboardRecent(),
-    ])
-      .then(([s, c, t, r]) => {
+    const baseRequests = [api.getDashboardSummary(), api.getDashboardRecent()] as const;
+
+    Promise.all(baseRequests)
+      .then(async ([s, r]) => {
         setSummary(s);
+        setRecent(r.items);
+
+        if (!canViewInsights) {
+          setCategories([]);
+          setTrends([]);
+          setComparison(null);
+          return;
+        }
+
+        const { periodA, periodB } = getComparisonPeriods();
+        const [c, t, cmp] = await Promise.all([
+          api.getDashboardByCategory(),
+          api.getDashboardTrends(),
+          api.getDashboardComparison(periodA, periodB),
+        ]);
         setCategories(c.items);
         setTrends(t.items);
-        setRecent(r.items);
+        setComparison(cmp);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [canViewInsights]);
 
   if (loading) return <p>Loading dashboard...</p>;
   if (error) return <p className="error">{error}</p>;
@@ -179,85 +217,133 @@ export function DashboardPage() {
 
       {!hasRecords && <DashboardEmptyState />}
 
-      <section className="card reveal" aria-labelledby="category-title">
-        <h2 id="category-title">By Category</h2>
-        <div className="category-bars" aria-label="Category distribution">
-          {categories.length === 0 && <p className="muted">No category totals available yet.</p>}
-          {categories.map((item) => {
-            const total = parseAmount(item.total);
-            const widthPercent = totalCategoryAmount > 0 ? Math.max((total / totalCategoryAmount) * 100, 3) : 3;
-            return (
-              <div key={item.category} className="category-row">
-                <div className="category-title">
-                  <span>{item.category}</span>
-                  <span>{item.count} records</span>
-                </div>
-                <div className="bar-track" aria-hidden="true">
-                  <div className="bar-fill" style={{ width: `${widthPercent}%` }} />
-                </div>
-                <div className="category-amount">{formatCurrency(total)}</div>
-              </div>
-            );
-          })}
-        </div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Category</th><th>Total</th><th>Count</th></tr>
-            </thead>
-            <tbody>
-              {categories.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="muted">No category data yet.</td>
-                </tr>
-              ) : null}
-              {categories.map((c) => (
-                <tr key={c.category}>
-                  <td>{c.category}</td>
-                  <td>{c.total}</td>
-                  <td>{c.count}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="card reveal" aria-labelledby="trends-title">
-        <h2 id="trends-title">Trends</h2>
-        {trends.length === 0 && <p className="muted">No monthly trend data yet.</p>}
-        {trends.length > 1 ? (
-          <>
-            <TrendSvg trends={trends} />
-            <div className="actions muted" style={{ marginTop: "0.5rem" }}>
-              <span>Income line</span>
-              <span>-</span>
-              <span>Expense line</span>
+      {canViewInsights ? (
+        <>
+          <section className="card reveal" aria-labelledby="category-title">
+            <h2 id="category-title">By Category</h2>
+            <div className="category-bars" aria-label="Category distribution">
+              {categories.length === 0 && <p className="muted">No category totals available yet.</p>}
+              {categories.map((item) => {
+                const total = parseAmount(item.total);
+                const widthPercent = totalCategoryAmount > 0 ? Math.max((total / totalCategoryAmount) * 100, 3) : 3;
+                return (
+                  <div key={item.category} className="category-row">
+                    <div className="category-title">
+                      <span>{item.category}</span>
+                      <span>{item.count} records</span>
+                    </div>
+                    <div className="bar-track" aria-hidden="true">
+                      <div className="bar-fill" style={{ width: `${widthPercent}%` }} />
+                    </div>
+                    <div className="category-amount">{formatCurrency(total)}</div>
+                  </div>
+                );
+              })}
             </div>
-          </>
-        ) : null}
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Period</th><th>Income</th><th>Expense</th></tr>
-            </thead>
-            <tbody>
-              {trends.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="muted">No trend periods yet.</td>
-                </tr>
-              ) : null}
-              {trends.map((t) => (
-                <tr key={t.period}>
-                  <td>{t.period}</td>
-                  <td>{t.income}</td>
-                  <td>{t.expense}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Category</th><th>Total</th><th>Count</th></tr>
+                </thead>
+                <tbody>
+                  {categories.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="muted">No category data yet.</td>
+                    </tr>
+                  ) : null}
+                  {categories.map((c) => (
+                    <tr key={c.category}>
+                      <td>{c.category}</td>
+                      <td>{c.total}</td>
+                      <td>{c.count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="card reveal" aria-labelledby="trends-title">
+            <h2 id="trends-title">Trends</h2>
+            {trends.length === 0 && <p className="muted">No monthly trend data yet.</p>}
+            {trends.length > 1 ? (
+              <>
+                <TrendSvg trends={trends} />
+                <div className="actions muted" style={{ marginTop: "0.5rem" }}>
+                  <span>Income line</span>
+                  <span>-</span>
+                  <span>Expense line</span>
+                </div>
+              </>
+            ) : null}
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Period</th><th>Income</th><th>Expense</th></tr>
+                </thead>
+                <tbody>
+                  {trends.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="muted">No trend periods yet.</td>
+                    </tr>
+                  ) : null}
+                  {trends.map((t) => (
+                    <tr key={t.period}>
+                      <td>{t.period}</td>
+                      <td>{t.income}</td>
+                      <td>{t.expense}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="card reveal" aria-labelledby="comparison-title">
+            <h2 id="comparison-title">Monthly Comparison</h2>
+            {!comparison ? <p className="muted">Comparison data is unavailable.</p> : null}
+            {comparison ? (
+              <>
+                <div className="grid cols-3" style={{ marginBottom: "0.75rem" }}>
+                  <article className="kpi-card income">
+                    <div className="muted">Income delta</div>
+                    <p className="metric-value">{formatCurrency(parseAmount(comparison.income_delta))}</p>
+                  </article>
+                  <article className="kpi-card expense">
+                    <div className="muted">Expense delta</div>
+                    <p className="metric-value">{formatCurrency(parseAmount(comparison.expense_delta))}</p>
+                  </article>
+                  <article className="kpi-card net">
+                    <div className="muted">Net delta</div>
+                    <p className="metric-value">{formatCurrency(parseAmount(comparison.net_delta))}</p>
+                  </article>
+                </div>
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr><th>Period</th><th>Income</th><th>Expense</th><th>Net</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>{comparison.period_a}</td>
+                        <td>{comparison.totals_a.income}</td>
+                        <td>{comparison.totals_a.expense}</td>
+                        <td>{comparison.totals_a.net}</td>
+                      </tr>
+                      <tr>
+                        <td>{comparison.period_b}</td>
+                        <td>{comparison.totals_b.income}</td>
+                        <td>{comparison.totals_b.expense}</td>
+                        <td>{comparison.totals_b.net}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            ) : null}
+          </section>
+        </>
+      ) : null}
 
       <section className="card reveal" aria-labelledby="recent-title">
         <h2 id="recent-title">Recent Records</h2>

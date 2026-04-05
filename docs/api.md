@@ -130,11 +130,22 @@ Response `204`.
 ### List Records
 
 ```http
-GET /api/v1/records?page=1&page_size=20&type=expense&category=Food&date_from=2025-01-01&date_to=2025-12-31&search=groceries
+GET /api/v1/records?page=1&page_size=20&type=expense&category=Food&date_from=2025-01-01&date_to=2025-12-31
 Authorization: Bearer <token>
 ```
 
-Viewers see only their own records. Admins see all.
+All authenticated roles can list records in paginated read-only form.
+
+Basic filters (`type`, `category`, `date_from`, `date_to`) are available to Viewer, Analyst, and Admin.
+
+Advanced filters (`search`, `amount_min`, `amount_max`) require Analyst or Admin role.
+
+Example (Analyst/Admin only):
+
+```http
+GET /api/v1/records?page=1&page_size=20&search=groceries&amount_min=50&amount_max=1000
+Authorization: Bearer <analyst_or_admin_token>
+```
 
 ### Create Record (Admin Only)
 
@@ -202,14 +213,41 @@ Response:
 
 ```http
 GET /api/v1/dashboard/by-category
-Authorization: Bearer <token>
+Authorization: Bearer <analyst_or_admin_token>
 ```
+
+Requires Analyst or Admin role.
 
 ### Trends
 
 ```http
 GET /api/v1/dashboard/trends?months=6
-Authorization: Bearer <token>
+Authorization: Bearer <analyst_or_admin_token>
+```
+
+Requires Analyst or Admin role.
+
+### Monthly Comparison
+
+```http
+GET /api/v1/dashboard/comparison?period_a=2026-01&period_b=2026-02
+Authorization: Bearer <analyst_or_admin_token>
+```
+
+Requires Analyst or Admin role.
+
+Response:
+
+```json
+{
+  "period_a": "2026-01",
+  "period_b": "2026-02",
+  "totals_a": { "income": "1000.00", "expense": "400.00", "net": "600.00" },
+  "totals_b": { "income": "1300.00", "expense": "450.00", "net": "850.00" },
+  "income_delta": "300.00",
+  "expense_delta": "50.00",
+  "net_delta": "250.00"
+}
 ```
 
 ### Recent

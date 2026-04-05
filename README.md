@@ -93,8 +93,8 @@ The project includes a seed script that creates demo users and realistic financi
 | Email | Password | Role | Purpose |
 |-------|----------|------|---------|
 | `admin@demo.com` | `Admin123!` | Admin | Full access, can manage users and records |
-| `analyst@demo.com` | `Analyst123!` | Analyst | Can view own records and analytics |
-| `viewer@demo.com` | `Viewer123!` | Viewer | Read-only access to own records |
+| `analyst@demo.com` | `Analyst123!` | Analyst | Read-only + advanced analysis capabilities |
+| `viewer@demo.com` | `Viewer123!` | Viewer | Read-only report mode with basic filters |
 
 #### Demo Data Generated
 
@@ -158,11 +158,18 @@ npm run dev
 
 ## Role Behavior
 
-| Role | Create Records | View All Records | Manage Users | Export Data |
-|------|---------------|------------------|--------------|-------------|
-| **Viewer** | No | Own only | No | Own only |
-| **Analyst** | No | Own only | No | Own only |
-| **Admin** | Yes | All | Yes | All |
+| Feature | Viewer | Analyst | Admin |
+|---------|--------|---------|-------|
+| Dashboard summary | Yes | Yes | Yes |
+| Recent records list (read-only) | Yes | Yes | Yes |
+| Basic filters (`type`, `category`, `date_from`, `date_to`) | Yes | Yes | Yes |
+| Export CSV/TXT | Yes | Yes | Yes |
+| Advanced filters (`search`, `amount_min`, `amount_max`) | No | Yes | Yes |
+| Category breakdown | No | Yes | Yes |
+| Monthly trends | No | Yes | Yes |
+| Monthly comparison | No | Yes | Yes |
+| Create/update/delete records | No | No | Yes |
+| Manage users and roles | No | No | Yes |
 
 ## API Endpoints
 
@@ -180,6 +187,7 @@ npm run dev
 
 ### Records
 - `GET /api/v1/records` - List records (filtered, paginated)
+- `GET /api/v1/records?search=&amount_min=&amount_max=` - Advanced filtering (analyst/admin only)
 - `POST /api/v1/records` - Create record (admin only)
 - `GET /api/v1/records/:id` - Get record detail
 - `PATCH /api/v1/records/:id` - Update record (admin only)
@@ -187,8 +195,9 @@ npm run dev
 
 ### Dashboard
 - `GET /api/v1/dashboard/summary` - Income/expense totals
-- `GET /api/v1/dashboard/by-category` - Category breakdown
-- `GET /api/v1/dashboard/trends` - Monthly trends
+- `GET /api/v1/dashboard/by-category` - Category breakdown (analyst/admin)
+- `GET /api/v1/dashboard/trends` - Monthly trends (analyst/admin)
+- `GET /api/v1/dashboard/comparison` - Month vs month comparison (analyst/admin)
 - `GET /api/v1/dashboard/recent` - Recent records
 
 ### Export

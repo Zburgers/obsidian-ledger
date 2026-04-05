@@ -29,6 +29,11 @@ export function RecordsPage({ onCreate, onView }: RecordsPageProps) {
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
   const [search, setSearch] = useState("");
+  const [amountMin, setAmountMin] = useState("");
+  const [amountMax, setAmountMax] = useState("");
+
+  const role = useAuthStore((s) => s.role);
+  const canUseAdvancedFilters = role === "analyst" || role === "admin";
 
   const fetchRecords = async () => {
     setLoading(true);
@@ -36,9 +41,11 @@ export function RecordsPage({ onCreate, onView }: RecordsPageProps) {
       const params = new URLSearchParams({ page: String(page), page_size: "20" });
       if (filterType) params.set("type", filterType);
       if (filterCategory) params.set("category", filterCategory);
-      if (filterFrom) params.set("from", filterFrom);
-      if (filterTo) params.set("to", filterTo);
-      if (search) params.set("search", search);
+      if (filterFrom) params.set("date_from", filterFrom);
+      if (filterTo) params.set("date_to", filterTo);
+      if (canUseAdvancedFilters && search) params.set("search", search);
+      if (canUseAdvancedFilters && amountMin) params.set("amount_min", amountMin);
+      if (canUseAdvancedFilters && amountMax) params.set("amount_max", amountMax);
       const data = await api.listRecords(params.toString());
       setRecords(data.items);
       setTotal(data.total);
@@ -68,7 +75,17 @@ export function RecordsPage({ onCreate, onView }: RecordsPageProps) {
 
   useEffect(() => {
     fetchRecords();
-  }, [page, filterType, filterCategory, filterFrom, filterTo, search]);
+  }, [
+    page,
+    filterType,
+    filterCategory,
+    filterFrom,
+    filterTo,
+    search,
+    amountMin,
+    amountMax,
+    canUseAdvancedFilters,
+  ]);
 
   const incomeRecords = records.filter((r) => r.record_type === "income");
   const expenseRecords = records.filter((r) => r.record_type === "expense");
@@ -128,15 +145,17 @@ export function RecordsPage({ onCreate, onView }: RecordsPageProps) {
               onChange={(e) => { setFilterCategory(e.target.value); setPage(1); }}
             />
           </div>
-          <div className="field">
-            <label htmlFor="search-filter">Search</label>
-            <input
-              id="search-filter"
-              placeholder="Search notes/category"
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            />
-          </div>
+          {canUseAdvancedFilters ? (
+            <div className="field">
+              <label htmlFor="search-filter">Search</label>
+              <input
+                id="search-filter"
+                placeholder="Search notes/category"
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              />
+            </div>
+          ) : null}
           <div className="field">
             <label htmlFor="from-filter">Date from</label>
             <input
@@ -159,6 +178,30 @@ export function RecordsPage({ onCreate, onView }: RecordsPageProps) {
             <label htmlFor="records-count">Result count</label>
             <input id="records-count" value={`${total} records`} readOnly aria-readonly="true" />
           </div>
+          {canUseAdvancedFilters ? (
+            <>
+              <div className="field">
+                <label htmlFor="amount-min-filter">Amount min</label>
+                <input
+                  id="amount-min-filter"
+                  type="number"
+                  step="0.01"
+                  value={amountMin}
+                  onChange={(e) => { setAmountMin(e.target.value); setPage(1); }}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="amount-max-filter">Amount max</label>
+                <input
+                  id="amount-max-filter"
+                  type="number"
+                  step="0.01"
+                  value={amountMax}
+                  onChange={(e) => { setAmountMax(e.target.value); setPage(1); }}
+                />
+              </div>
+            </>
+          ) : null}
           <div className="field">
             <label htmlFor="active-filters">Active filters</label>
             <input
@@ -166,9 +209,11 @@ export function RecordsPage({ onCreate, onView }: RecordsPageProps) {
               value={[
                 filterType && `type=${filterType}`,
                 filterCategory && `category=${filterCategory}`,
-                search && `search=${search}`,
-                filterFrom && `from=${filterFrom}`,
-                filterTo && `to=${filterTo}`,
+                canUseAdvancedFilters && search && `search=${search}`,
+                canUseAdvancedFilters && amountMin && `amount_min=${amountMin}`,
+                canUseAdvancedFilters && amountMax && `amount_max=${amountMax}`,
+                filterFrom && `date_from=${filterFrom}`,
+                filterTo && `date_to=${filterTo}`,
               ].filter(Boolean).join(" | ") || "none"}
               readOnly
               aria-readonly="true"
