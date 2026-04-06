@@ -277,3 +277,30 @@ async def test_admin_can_soft_delete_record(client, admin_token):
     )
     ids = [item["id"] for item in list_resp.json()["items"]]
     assert record_id not in ids
+
+
+@pytest.mark.asyncio
+async def test_viewer_cannot_soft_delete_record(client, admin_token, viewer_token):
+    create_resp = await client.post(
+        "/api/v1/records",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={
+            "record_type": "expense",
+            "category": "Utilities",
+            "amount": "88.00",
+        },
+    )
+    record_id = create_resp.json()["id"]
+
+    delete_resp = await client.delete(
+        f"/api/v1/records/{record_id}",
+        headers={"Authorization": f"Bearer {viewer_token}"},
+    )
+    assert delete_resp.status_code == 403
+
+    list_resp = await client.get(
+        "/api/v1/records",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    ids = [item["id"] for item in list_resp.json()["items"]]
+    assert record_id in ids

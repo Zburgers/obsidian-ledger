@@ -101,9 +101,9 @@ describe("Records page", () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByText("Filters")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Search")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Amount min")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Amount max")).not.toBeInTheDocument();
+    expect(await screen.findByLabelText("Filters")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Search records")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Minimum amount")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Maximum amount")).not.toBeInTheDocument();
   });
 });

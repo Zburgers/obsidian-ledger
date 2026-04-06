@@ -4,6 +4,11 @@ A Dockerized finance tracker with FastAPI backend and React frontend. Track inco
 
 **Repository:** https://github.com/Zburgers/obsidian-ledger
 
+## Deep Dive Docs
+
+- API reference: `docs/api.md`
+- System architecture: `docs/architecture.md`
+
 ## Architecture
 
 ```mermaid
@@ -204,7 +209,23 @@ npm run dev
 - `GET /api/v1/export/csv` - Download CSV
 - `GET /api/v1/export/pdf` - Download PDF report
 
+Both exports are available from the Records page UI (`CSV` and `PDF` actions).
+
 Full OpenAPI spec: `http://localhost:8000/openapi.json`
+
+## Demo Screens
+
+### Dashboard
+
+![Dashboard Demo](docs/Demo1.png)
+
+### Records
+
+![Records Demo](docs/Demo2.png)
+
+### User Management
+
+![User Management Demo](docs/Demo3.png)
 
 ## Testing
 
